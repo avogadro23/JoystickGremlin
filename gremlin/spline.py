@@ -531,21 +531,15 @@ class CubicBezierSpline(AbstractCurve):
         elif self._control_points[-1].center.x < x:
             index = len(self._lookup) - 1
         else:
-            # segment_count = int((len(self.points) - 4) / 3) + 1
             # Find segment corresponding to the x value
             index = 0
             for cp1, cp2 in zip(self._control_points[:-1], self._control_points[1:]):
                 if cp1.center.x <= x <= cp2.center.x:
                     break
                 index += 1
-            # for i in range(len(self.control_points) - 1):
-            #     if self.control_points[i].center.x <= x self.con
-            #     if self.points[offset].x <= x <= self.points[offset+3].x:
-            #         index = i
-            #         break
 
         # Linearly interpolate the lookup table data
-        interval = [0, len(self._lookup[index])]
+        interval = [0, len(self._lookup[index]) - 1]
         searching = True
         while searching:
             distance = interval[1] - interval[0]
@@ -558,6 +552,15 @@ class CubicBezierSpline(AbstractCurve):
                 interval[0] = center_index
             else:
                 interval[1] = center_index
+
+        # Safeguard against out of bounds results.
+        if interval[0] < 0:
+            interval = [0, 1]
+        elif interval[1] >= len(self._lookup[index]):
+            interval = [
+                len(self._lookup[index]) - 2,
+                len(self._lookup[index]) - 1
+            ]
 
         low = self._lookup[index][interval[0]][1]
         high = self._lookup[index][interval[1]][1]
