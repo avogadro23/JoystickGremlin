@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from typing import (
@@ -77,44 +78,50 @@ class MapToVjoyFunctor(AbstractFunctor):
         if not self._should_execute(value):
             return
 
-        if self.data.vjoy_input_type == InputType.JoystickAxis:
-            if self.data.axis_mode == AxisMode.Absolute:
-                VJoyProxy()[self.data.vjoy_device_id] \
-                    .axis(self.data.vjoy_input_id).value = value.current
-            else:
-                self.should_stop_thread = abs(event.value) < 0.05
-                self.axis_delta_value = value.current * (
-                    self.data.axis_scaling * self.SCALING_MULTIPLIER
-                )
-                self.thread_last_update = time.time()
-                if self.thread_running is False:
-                    if isinstance(self.thread, threading.Thread):
-                        self.thread.join()
-                    self.thread = threading.Thread(
-                        target=self.relative_axis_thread
+        try:
+            if self.data.vjoy_input_type == InputType.JoystickAxis:
+                if self.data.axis_mode == AxisMode.Absolute:
+                    VJoyProxy()[self.data.vjoy_device_id] \
+                        .axis(self.data.vjoy_input_id).value = value.current
+                else:
+                    self.should_stop_thread = abs(event.value) < 0.05
+                    self.axis_delta_value = value.current * (
+                        self.data.axis_scaling * self.SCALING_MULTIPLIER
                     )
-                    self.thread.start()
+                    self.thread_last_update = time.time()
+                    if self.thread_running is False:
+                        if isinstance(self.thread, threading.Thread):
+                            self.thread.join()
+                        self.thread = threading.Thread(
+                            target=self.relative_axis_thread
+                        )
+                        self.thread.start()
 
-        elif self.data.vjoy_input_type in [
-            InputType.JoystickButton,
-            InputType.Keyboard
-        ]:
-            is_pressed = value.current
-            if self.data.button_inverted:
-                is_pressed = not is_pressed
-            VJoyProxy()[self.data.vjoy_device_id] \
-                .button(self.data.vjoy_input_id).is_pressed = is_pressed
+            elif self.data.vjoy_input_type in [
+                InputType.JoystickButton,
+                InputType.Keyboard
+            ]:
+                is_pressed = value.current
+                if self.data.button_inverted:
+                    is_pressed = not is_pressed
+                VJoyProxy()[self.data.vjoy_device_id] \
+                    .button(self.data.vjoy_input_id).is_pressed = is_pressed
 
-            if is_pressed and ActionProperty.DisableAutoRelease not in properties:
-                device_helpers.ButtonReleaseActions().register_vjoy_button_release(
-                    (self.data.vjoy_device_id, self.data.vjoy_input_id),
-                    event,
-                    self.data.button_inverted
-                )
+                if is_pressed and ActionProperty.DisableAutoRelease not in properties:
+                    device_helpers.ButtonReleaseActions().register_vjoy_button_release(
+                        (self.data.vjoy_device_id, self.data.vjoy_input_id),
+                        event,
+                        self.data.button_inverted
+                    )
 
-        elif self.data.vjoy_input_type == InputType.JoystickHat:
-            VJoyProxy()[self.data.vjoy_device_id] \
-                .hat(self.data.vjoy_input_id).direction = value.current
+            elif self.data.vjoy_input_type == InputType.JoystickHat:
+                VJoyProxy()[self.data.vjoy_device_id] \
+                    .hat(self.data.vjoy_input_id).direction = value.current
+        except error.VJoyError as e:
+            logging.getLogger("event").error(
+                f"Failed to execute {self.data.name} action due to "
+                f"vJoy error: {e}."
+            )
 
     def relative_axis_thread(self) -> None:
         self.thread_running = True

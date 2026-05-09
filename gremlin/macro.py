@@ -868,19 +868,24 @@ class VJoyAction(AbstractAction):
         return VJoyAction(1, InputType.JoystickButton, 1, False)
 
     def __call__(self) -> None:
-        vjoy = VJoyProxy()[self.vjoy_id]
-        if self.input_type == InputType.JoystickAxis:
-            if self.axis_mode == AxisMode.Absolute:
-                vjoy.axis(self.input_id).value = self.value
-            elif self.axis_mode == AxisMode.Relative:
-                vjoy.axis(self.input_id).value = max(
-                    -1.0,
-                    min(1.0, vjoy.axis(self.input_id).value + self.value)
-                )
-        elif self.input_type == InputType.JoystickButton:
-            vjoy.button(self.input_id).is_pressed = self.value
-        elif self.input_type == InputType.JoystickHat:
-            vjoy.hat(self.input_id).direction = self.value
+        try:
+            vjoy = VJoyProxy()[self.vjoy_id]
+            if self.input_type == InputType.JoystickAxis:
+                if self.axis_mode == AxisMode.Absolute:
+                    vjoy.axis(self.input_id).value = self.value
+                elif self.axis_mode == AxisMode.Relative:
+                    vjoy.axis(self.input_id).value = max(
+                        -1.0,
+                        min(1.0, vjoy.axis(self.input_id).value + self.value)
+                    )
+            elif self.input_type == InputType.JoystickButton:
+                vjoy.button(self.input_id).is_pressed = self.value
+            elif self.input_type == InputType.JoystickHat:
+                vjoy.hat(self.input_id).direction = self.value
+        except Exception as e:
+            logging.getLogger("event").error(
+                f"Failed to execute vJoy macro entry due to: {e}"
+            )
 
     def to_xml(self) -> ElementTree.Element:
         node = self._create_node(self.tag)

@@ -75,6 +75,10 @@ def configure_logger(config: dict[str, Any]) -> None:
         )
     elif config["mode"] == "session":
         handler = logging.FileHandler(config["logfile"], mode="w")
+    else:
+        raise gremlin.error.GremlinError(
+            f"Invalid logging mode: {config['mode']}"
+        )
     handler.setLevel(config["level"])
     formatter = logging.Formatter(config["format"], "%Y-%m-%d %H:%M:%S")
     handler.setFormatter(formatter)
