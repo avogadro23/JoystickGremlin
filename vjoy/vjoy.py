@@ -9,13 +9,7 @@ import enum
 import logging
 import threading
 import time
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-)
+from typing import Any
 import os
 
 from vjoy.vjoy_interface import (
@@ -506,9 +500,11 @@ class VJoy:
             vjoy_id: id of the vJoy device to initialize.
 
         Raises:
-            VJoyConcurrencyError: If the requested vJoy device is already owned by this
-                process. Calling code should be able to catch and handle this.
-            VJoyError: If the requested vJoy device cannot be instantiated for any other reason.
+            VJoyConcurrencyError: If the requested vJoy device is already owned
+                by this process. Calling code should be able to catch and handle
+                this.
+            VJoyError: If the requested vJoy device cannot be instantiated for
+                any other reason.
         """
         self.vjoy_id = None
 
@@ -618,8 +614,8 @@ class VJoy:
 
     def axis_name(
             self,
-            axis_id: Optional[int]=None,
-            linear_index: Optional[int]=None
+            axis_id: int | None = None,
+            linear_index: int | None = None
     ) -> str:
         """Returns the textual name of the requested axis.
 
@@ -675,8 +671,8 @@ class VJoy:
 
     def axis(
             self,
-            axis_id: Optional[int]=None,
-            linear_index: Optional[int]=None
+            axis_id: int | None = None,
+            linear_index: int | None = None
     ) -> Axis:
         """Returns the axis object associated with the provided index.
 
@@ -743,8 +739,8 @@ class VJoy:
 
     def is_axis_valid(
             self,
-            axis_id: Optional[int]=None,
-            linear_index: Optional[int]=None
+            axis_id: int | None = None,
+            linear_index: int | None = None
     ) -> bool:
         """Returns whether an axis is valid.
 
@@ -845,7 +841,7 @@ class VJoy:
         )
         self._keep_alive_timer.start()
 
-    def _init_axes(self) -> Dict[int, Axis]:
+    def _init_axes(self) -> dict[int, Axis]:
         """Retrieves all axes present on the vJoy device and creates their
         control objects.
 
@@ -861,7 +857,7 @@ class VJoy:
                 self._axis_lookup[axis] = i+1
         return axes
 
-    def _init_buttons(self) -> Dict[int, Button]:
+    def _init_buttons(self) -> dict[int, Button]:
         """Retrieves all buttons present on the vJoy device and creates their
         control objects.
 
@@ -873,7 +869,7 @@ class VJoy:
             buttons[btn_id] = Button(self, btn_id)
         return buttons
 
-    def _init_hats(self) -> Dict[int, Hat]:
+    def _init_hats(self) -> dict[int, Hat]:
         """Retrieves all hats present on the vJoy device and creates their
         control objects.
 
