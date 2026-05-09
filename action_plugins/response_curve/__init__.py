@@ -94,9 +94,15 @@ def deadzone(
         Corrected value
     """
     if value >= 0:
-        return min(1.0, max(0.0, (value - high_center) / abs(high - high_center)))
+        return min(
+            1.0,
+            max(0.0, (value - high_center) / max(0.01, abs(high - high_center)))
+        )
     else:
-        return max(-1.0, min(0.0, (value - low_center) / abs(low - low_center)))
+        return max(
+            -1.0,
+            min(0.0, (value - low_center) / max(0.01, abs(low - low_center)))
+        )
 
 
 class ResponseCurveFunctor(AbstractFunctor):
