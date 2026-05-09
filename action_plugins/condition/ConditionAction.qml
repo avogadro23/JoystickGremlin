@@ -187,20 +187,18 @@ Item {
                 VJoySelector {
                     validTypes: ["axis", "button", "hat"]
 
-                    onVjoyInputIdChanged: () => {
-                        modelData.vjoyInputId = vjoyInputId
-                    }
-                    onVjoyDeviceIdChanged: () => {
-                        modelData.vjoyDeviceId = vjoyDeviceId
-                    }
-                    onVjoyInputTypeChanged: () => {
-                        modelData.vjoyInputType = vjoyInputType
+                    onSelectionChanged: (vjoyId, inputType, inputId) => {
+                        modelData.vjoyDeviceId = vjoyId
+                        modelData.vJoyInputType = inputType
+                        modelData.vjoyInputId = inputId
                     }
 
                     Component.onCompleted: () => {
-                        vjoyInputType = modelData.vjoyInputType
-                        vjoyInputId = modelData.vjoyInputId
-                        vjoyDeviceId = modelData.vjoyDeviceId
+                        initialize(
+                            modelData.vjoyDeviceId,
+                            modelData.vjoyInputType,
+                            modelData.vjoyInputId
+                        )
                     }
                 }
 
@@ -349,20 +347,18 @@ Item {
                     VJoySelector {
                         validTypes: ["axis", "button", "hat"]
 
-                        onVjoyInputIdChanged: () => {
-                            modelData.vjoyInputId = vjoyInputId
-                        }
-                        onVjoyDeviceIdChanged: () => {
-                            modelData.vjoyDeviceId = vjoyDeviceId
-                        }
-                        onVjoyInputTypeChanged: () => {
-                            modelData.vjoyInputType = vjoyInputType
+                        onSelectionChanged: (vjoyId, inputType, inputId) => {
+                            modelData.vjoyDeviceId = vjoyId
+                            modelData.vJoyInputType = inputType
+                            modelData.vjoyInputId = inputId
                         }
 
                         Component.onCompleted: () => {
-                            vjoyInputType = modelData.vjoyInputType
-                            vjoyInputId = modelData.vjoyInputId
-                            vjoyDeviceId = modelData.vjoyDeviceId
+                            initialize(
+                                modelData.vjoyDeviceId,
+                                modelData.vjoyInputType,
+                                modelData.vjoyInputId
+                            )
                         }
                     }
 

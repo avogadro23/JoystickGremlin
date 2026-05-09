@@ -28,14 +28,20 @@ Item {
         VJoySelector {
             validTypes: [_root.action.actionBehavior]
 
-            onVjoyInputIdChanged: { _root.action.vjoyInputId = vjoyInputId }
-            onVjoyDeviceIdChanged: { _root.action.vjoyDeviceId = vjoyDeviceId }
-            onVjoyInputTypeChanged: { _root.action.vjoyInputType = vjoyInputType }
+            // Propagate internal changes to the external interface.
+            onSelectionChanged: (vjoyId, inputType, inputId) => {
+                _root.action.vjoyDeviceId = vjoyId
+                _root.action.vjoyInputType = inputType
+                _root.action.vjoyInputId = inputId
+
+            }
 
             Component.onCompleted: {
-                vjoyInputType = _root.action.actionBehavior
-                vjoyInputId = _root.action.vjoyInputId
-                vjoyDeviceId = _root.action.vjoyDeviceId
+                initialize(
+                    _root.action.vjoyDeviceId,
+                    _root.action.actionBehavior,
+                    _root.action.vjoyInputId
+                )
             }
         }
 

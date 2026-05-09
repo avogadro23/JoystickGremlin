@@ -43,6 +43,7 @@ class InputType(enum.Enum):
     JoystickHat = 4
     Mouse = 5
     VirtualButton = 6
+    Invalid = 7
 
     @staticmethod
     def to_string(value: InputType) -> str:
@@ -65,7 +66,8 @@ _InputType_to_string_lookup = {
     InputType.JoystickHat: "hat",
     InputType.Keyboard: "key",
     InputType.Mouse: "mouse",
-    InputType.VirtualButton: "virtual-button"
+    InputType.VirtualButton: "virtual-button",
+    InputType.Invalid: "invalid",
 }
 
 _InputType_to_enum_lookup = {
@@ -74,7 +76,8 @@ _InputType_to_enum_lookup = {
     "hat": InputType.JoystickHat,
     "key": InputType.Keyboard,
     "mouse": InputType.Mouse,
-    "virtual-button": InputType.VirtualButton
+    "virtual-button": InputType.VirtualButton,
+    "invalid": InputType.Invalid,
 }
 
 

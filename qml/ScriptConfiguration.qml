@@ -314,20 +314,18 @@ JGListView {
 
                     validTypes: modelData.validTypes
 
-                    onVjoyInputIdChanged: () => {
-                        modelData.inputId = vjoyInputId
-                    }
-                    onVjoyDeviceIdChanged: () => {
-                        modelData.vjoyId = vjoyDeviceId
-                    }
-                    onVjoyInputTypeChanged: () => {
-                        modelData.inputType = vjoyInputType
+                    onSelectionChanged: (vjoyId, inputType, inputId) => {
+                        modelData.vjoyId = vjoyId
+                        modelData.inputType = inputType
+                        modelData.inputId = inputId
                     }
 
                     Component.onCompleted: () => {
-                        vjoyInputType = modelData.inputType
-                        vjoyInputId = modelData.inputId
-                        vjoyDeviceId = modelData.vjoyId
+                        initialize(
+                            modelData.vjoyId,
+                            modelData.inputType,
+                            modelData.inputId
+                        )
                     }
                 }
             }

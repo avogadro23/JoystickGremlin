@@ -11,33 +11,32 @@ import Gremlin.Device
 Item {
     id: _root
 
-    property string vjoyInputType
-    property int vjoyDeviceId
-    property int vjoyInputId
-    property var validTypes
+    property alias validTypes: _vjoy.validTypes
+
+    signal selectionChanged(int deviceId, string inputType, int inputId)
 
     implicitHeight: _content.height
     implicitWidth: _content.implicitWidth
 
     // React to the validTypes value being changed from an external source.
-    onValidTypesChanged: () => { _vjoy.validTypes = validTypes }
+    function initialize(vjoy_id, input_type, input_id) {
+        _vjoy.setInitialState(vjoy_id, input_type, input_id)
+    }
+
+    function updateState() {
+        _vjoy.setState(_device.currentText, _input.currentText)
+    }
 
     VJoyDevices {
         id: _vjoy
 
-        Component.onCompleted: () => {
-            validTypes = _root.validTypes
-            setSelection(
-                _root.vjoyDeviceId,
-                _root.vjoyInputId,
-                _root.vjoyInputType
-            )
+        onCurrentSelectionChanged: (vjoyId, inputType, inputId) => {
+            _root.selectionChanged(vjoyId, inputType, inputId)
         }
 
-        onVjoyIndexChanged: () => { _root.vjoyDeviceId = _vjoy.vjoyId }
-        onInputIndexChanged: () => {
-            _root.vjoyInputId = _vjoy.inputId
-            _root.vjoyInputType = _vjoy.inputType
+        onCurrentValuesChanged: (vjoy_name, input_name) => {
+            _device.currentIndex = _device.find(vjoy_name)
+            _input.currentIndex = _input.find(input_name)
         }
     }
 
@@ -54,10 +53,9 @@ Item {
             Layout.minimumWidth: 150
             Layout.fillWidth: true
 
-            model: _vjoy.deviceModel
-            currentIndex: _vjoy.vjoyIndex
+            model: _vjoy.vjoyDevices
 
-            onActivated: (index) => { _vjoy.vjoyIndex = index }
+            onActivated: (index) => { updateState() }
         }
 
         BetterComboBox {
@@ -66,10 +64,9 @@ Item {
             Layout.minimumWidth: 150
             Layout.fillWidth: true
 
-            model: _vjoy.inputModel
-            currentIndex: _vjoy.inputIndex
+            model: _vjoy.inputChoices
 
-            onActivated: (index) =>  { _vjoy.inputIndex = index }
+            onActivated: (index) =>  { updateState() }
         }
 
         HorizontalDivider {}
