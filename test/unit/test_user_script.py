@@ -6,7 +6,7 @@ import pathlib
 import pytest
 import uuid
 
-from gremlin import profile, shared_state, types, user_script
+from gremlin import error, profile, shared_state, types, user_script
 from test.unit.conftest import get_fake_device_guid
 
 
@@ -198,6 +198,26 @@ class TestScript:
         var_from_xml.from_xml(xml)
         assert var_from_xml.value == value
 
+    def test_selection_variable_with_invalid_default_raises(self, subtests):
+        with subtests.test("default too large"):
+            with pytest.raises(error.PluginError):
+                user_script.SelectionVariable(
+                    "Var With Default Index Too Large",
+                    "Selection variable with invalid default index",
+                    True,
+                    ["option1", "option2"],
+                    default_index=5,
+                )
+        with subtests.test("negative default index not allowed"):
+            with pytest.raises(error.PluginError):
+                user_script.SelectionVariable(
+                    "Var With Default Index Negative",
+                    "Selection variable with invalid default index",
+                    True,
+                    ["option1", "option2"],
+                    default_index=-1,
+                )
+
     def test_selection_variable(self, script_for_test: user_script.Script, subtests):
         """Test selection variable properties."""
         var = script_for_test.get_variable("A selection variable")
@@ -215,6 +235,19 @@ class TestScript:
             var.value = "selection2"
             assert var.value == "selection2"
             assert var.is_valid()
+
+        with subtests.test("handles reduced options"):
+            var.value = "selection3"
+            var_xml = var.to_xml()
+            assert var_xml is not None
+            # Make the selection in XML too large.
+            for child in var_xml:
+                if child.tag == "property" and child.get("name") == "index":
+                    child.text = "4"
+            var.from_xml(var_xml)
+            # Should still be valid with existing value
+            assert var.is_valid()
+            assert var.value == "selection3"  # Previous valid value.
 
     @pytest.mark.parametrize("value", ["selection1", "selection2", "selection3"])
     def test_selection_variable_xml_transforms(
