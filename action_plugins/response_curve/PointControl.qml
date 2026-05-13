@@ -13,6 +13,7 @@ Rectangle {
 
     readonly property int offset: 5
     property Repeater repeater
+    property Item focusTarget
 
     width: offset * 2
     height: offset * 2
@@ -35,7 +36,7 @@ Rectangle {
         }
         onPressed: () => {
             action.selectedPoint = index
-            forceActiveFocus()
+            focusTarget.forceActiveFocus()
         }
         onReleased: () => { action.redrawElements() }
     }

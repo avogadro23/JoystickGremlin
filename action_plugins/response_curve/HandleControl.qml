@@ -14,6 +14,7 @@ Rectangle {
 
     readonly property int offset: 5
     property Repeater repeater
+    property Item focusTarget
 
     property alias leftHandle: _handleLeft
     property alias rightHandle: _handleRight
@@ -115,7 +116,7 @@ Rectangle {
                 }
                 onPressed: () => {
                     action.selectedPoint = index
-                    _root.forceActiveFocus()
+                    focusTarget.forceActiveFocus()
                 }
                 onReleased: () => { action.redrawElements() }
             }
@@ -146,7 +147,7 @@ Rectangle {
                 }
                 onPressed: () => {
                     action.selectedPoint = index
-                    _root.forceActiveFocus()
+                    focusTarget.forceActiveFocus()
                 }
                 onReleased: () => { action.redrawElements() }
             }
@@ -166,7 +167,7 @@ Rectangle {
         }
         onPressed: () => {
             action.selectedPoint = index
-            _root.forceActiveFocus()
+            focusTarget.forceActiveFocus()
         }
         onReleased: () => { action.redrawElements() }
     }

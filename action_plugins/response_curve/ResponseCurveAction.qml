@@ -225,7 +225,13 @@ Item {
                         Loader {
                             Component.onCompleted: () => {
                                 let url = modelData.hasHandles ? "HandleControl.qml" : "PointControl.qml"
-                                setSource(url, {"repeater": _repeater})
+                                setSource(
+                                    url,
+                                    {
+                                        "repeater": _repeater,
+                                        "focusTarget": _root
+                                    }
+                                )
                             }
                         }
                     }
