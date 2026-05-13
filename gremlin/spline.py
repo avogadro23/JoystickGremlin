@@ -158,7 +158,7 @@ class AbstractCurve(abc.ABC):
 
 class PiecewiseLinear(AbstractCurve):
 
-    def __init__(self, points: Optional[CoordinateList]=None):
+    def __init__(self, points: Optional[CoordinateList]=None) -> None:
         """Creates a piece wise linear curve.
 
         Args:
@@ -239,7 +239,7 @@ class CubicSpline(AbstractCurve):
     create a C2 spline which passes through all of them.
     """
 
-    def __init__(self, points: Optional[CoordinateList]=None):
+    def __init__(self, points: Optional[CoordinateList]=None) -> None:
         """Creates a new CubicSpline object.
 
         Args:
@@ -283,13 +283,11 @@ class CubicSpline(AbstractCurve):
     def fit(self) -> None:
         """Computes the second derivatives for the control points."""
         self.points = sorted(self.points, key=lambda pt: pt.x)
+        self.z = [0.0] * len(self.points)
         n = len(self.points) - 1
 
         if n < 2:
             return
-            # raise error.GremlinError(
-            #     f"CubicSpline requires at least two control points "
-            # )
 
         eps = 0.000001
         h = [0.0] * n
@@ -366,12 +364,12 @@ class CubicBezierSpline(AbstractCurve):
                 center: Optional[Point2D]=None,
                 handle_left: Optional[Point2D]=None,
                 handle_right: Optional[Point2D]=None
-        ):
+        ) -> None:
             self.center = center
             self.handle_left = handle_left
             self.handle_right = handle_right
 
-    def __init__(self, points: Optional[CoordinateList]=None):
+    def __init__(self, points: Optional[CoordinateList]=None) -> None:
         """Creates a new CubicBezierSpline object.
 
         Args:
@@ -409,7 +407,7 @@ class CubicBezierSpline(AbstractCurve):
                 cp.handle_right.y *= -1
         self.fit()
 
-    def fit(self):
+    def fit(self) -> None:
         self._control_points = [
             cp for cp in sorted(self._control_points, key=lambda cp: cp.center.x)
         ]
