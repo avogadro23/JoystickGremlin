@@ -47,6 +47,7 @@ from gremlin.types import (
 )
 
 from gremlin.ui.device import InputIdentifier
+import gremlin.ui.type_aliases as ta
 
 from action_plugins.condition.comparator import (
     AbstractComparator,
@@ -55,9 +56,6 @@ from action_plugins.condition.comparator import (
     PressedComparator,
     RangeComparator,
 )
-
-if TYPE_CHECKING:
-    import gremlin.ui.type_aliases as ta
 
 
 QML_IMPORT_NAME = "Gremlin.ActionPlugins"
@@ -73,8 +71,11 @@ class AbstractState(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def get(self) -> Any:
+    def get(self, value: Value) -> Any:
         """Returns the current value of the state.
+
+        Args:
+            value: Value of the input event being evaluated.
 
         Returns:
             Current value of the state.
@@ -123,7 +124,7 @@ class AbstractCondition(QtCore.QObject):
             True if the condition is fulfilled, False otherwise.
         """
         if self._comparator is not None:
-            return self._comparator(value, [s.get() for s in self._states])
+            return self._comparator(value, [s.get(value) for s in self._states])
         return False
 
     def from_xml(self, node: ElementTree.Element) -> None:
@@ -302,7 +303,7 @@ class AbstractCondition(QtCore.QObject):
         return False
 
 
-@QtQml.QmlElement
+@ta.QmlElement
 class VJoyCondition(AbstractCondition):
 
     """vJoy input state based condition."""
@@ -322,7 +323,7 @@ class VJoyCondition(AbstractCondition):
             self.input_id = input_id
             self.vjoy = VJoyProxy()[self.vjoy_id]
 
-        def get(self) -> bool | float | HatDirection:
+        def get(self, value: Value) -> bool | float | HatDirection:
             match self.input_type:
                 case InputType.JoystickAxis:
                     return self.vjoy.axis(self.input_id).value
@@ -432,7 +433,7 @@ class VJoyCondition(AbstractCondition):
     )
 
 
-@QtQml.QmlElement
+@ta.QmlElement
 class KeyboardCondition(AbstractCondition):
 
     """Keyboard state based condition.
@@ -447,7 +448,7 @@ class KeyboardCondition(AbstractCondition):
             self.key = key_from_code(scan_code, is_extended)
             self.keyboard = Keyboard()
 
-        def get(self) -> bool:
+        def get(self, value: Value) -> bool:
             return self.keyboard.is_pressed(self.key)
 
         def display_name(self) -> str:
@@ -517,7 +518,7 @@ class KeyboardCondition(AbstractCondition):
         pass
 
 
-@QtQml.QmlElement
+@ta.QmlElement
 class JoystickCondition(AbstractCondition):
 
     """Joystick input state based condition.
@@ -549,7 +550,7 @@ class JoystickCondition(AbstractCondition):
                 device_uuid
             )
 
-        def get(self) -> bool | float | HatDirection:
+        def get(self, value: Value) -> bool | float | HatDirection:
             if self.joystick is None:
                 raise error.GremlinError(
                     f"ConditionAction: Joystick with UUID {self.device_uuid} "
@@ -663,7 +664,7 @@ class JoystickCondition(AbstractCondition):
         return performed_swap
 
 
-@QtQml.QmlElement
+@ta.QmlElement
 class CurrentInputCondition(AbstractCondition):
 
     """Condition based on the current input state."""
@@ -673,8 +674,8 @@ class CurrentInputCondition(AbstractCondition):
         def __init__(self) -> None:
             pass
 
-        def get(self) -> Any:
-            return None
+        def get(self, value: Value) -> Any:
+            return value.current
 
         def display_name(self) -> str:
             return "Current Input"
@@ -683,6 +684,7 @@ class CurrentInputCondition(AbstractCondition):
         super().__init__(parent)
 
         self._condition_type = ConditionType.CurrentInput
+        self._states = [self.State()]
 
     def from_xml(self, node: ElementTree.Element) -> None:
         self._comparator_from_xml(node)
@@ -697,7 +699,7 @@ class CurrentInputCondition(AbstractCondition):
         self._create_comparator(input_type)
 
 
-@QtQml.QmlElement
+@ta.QmlElement
 class LogicalDeviceCondition(AbstractCondition):
 
     """Logical Device input state based condition."""
@@ -714,7 +716,7 @@ class LogicalDeviceCondition(AbstractCondition):
                 self.input_id
             )]
 
-        def get(self) -> Any:
+        def get(self, value: Value) -> Any:
             match self.input_type:
                 case InputType.JoystickAxis:
                     return self.input.value

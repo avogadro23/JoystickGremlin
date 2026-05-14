@@ -11,6 +11,16 @@
                 <behavior>button</behavior>
             </action-configuration>
         </input>
+        <input>
+            <device-id>f0af472f-8e17-493b-a1eb-7333ee8543f2</device-id>
+            <input-type>button</input-type>
+            <mode>Default</mode>
+            <input-id>3</input-id>
+            <action-configuration>
+                <root-action>bec157dd-21f3-4b04-8df1-2047b9665587</root-action>
+                <behavior>button</behavior>
+            </action-configuration>
+        </input>
     </inputs>
     <settings>
         <startup-mode>Default</startup-mode>
@@ -139,17 +149,48 @@
         </input>
     </logical-device>
     <library>
-        <action id="37196fa4-761c-4c79-9814-7900da704423" type="root">
-            <actions>
-                <action-id>f4804b4c-cd30-46be-a5a6-e84c8c6bdf1e</action-id>
-            </actions>
+        <action id="f9becf57-1f9a-4076-bee9-56dcf159c045" type="map-to-logical-device">
+            <property type="int">
+                <name>logical-input-id</name>
+                <value>12</value>
+            </property>
+            <property type="input_type">
+                <name>logical-input-type</name>
+                <value>button</value>
+            </property>
+            <property type="bool">
+                <name>button-inverted</name>
+                <value>False</value>
+            </property>
             <property type="string">
                 <name>action-label</name>
-                <value>Root</value>
+                <value>Map to Logical Device</value>
             </property>
             <property type="activation-mode">
                 <name>activation-mode</name>
-                <value>disallowed</value>
+                <value>both</value>
+            </property>
+        </action>
+        <action id="4ad8987d-e5ca-4903-ad5b-ba7b194b6687" type="map-to-logical-device">
+            <property type="int">
+                <name>logical-input-id</name>
+                <value>11</value>
+            </property>
+            <property type="input_type">
+                <name>logical-input-type</name>
+                <value>button</value>
+            </property>
+            <property type="bool">
+                <name>button-inverted</name>
+                <value>False</value>
+            </property>
+            <property type="string">
+                <name>action-label</name>
+                <value>Map to Logical Device</value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>both</value>
             </property>
         </action>
         <action id="f4804b4c-cd30-46be-a5a6-e84c8c6bdf1e" type="condition">
@@ -196,48 +237,146 @@
                 <value>both</value>
             </property>
         </action>
-        <action id="f9becf57-1f9a-4076-bee9-56dcf159c045" type="map-to-logical-device">
-            <property type="int">
-                <name>logical-input-id</name>
-                <value>12</value>
+        <action id="37196fa4-761c-4c79-9814-7900da704423" type="root">
+            <actions>
+                <action-id>f4804b4c-cd30-46be-a5a6-e84c8c6bdf1e</action-id>
+            </actions>
+            <property type="string">
+                <name>action-label</name>
+                <value>Root</value>
             </property>
-            <property type="input_type">
-                <name>logical-input-type</name>
-                <value>button</value>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>disallowed</value>
             </property>
+        </action>
+        <action id="ce15159c-42f5-45e5-befa-d663c13335c0" type="macro">
             <property type="bool">
-                <name>button-inverted</name>
+                <name>is-exclusive</name>
                 <value>False</value>
             </property>
             <property type="string">
+                <name>repeat-mode</name>
+                <value>Single</value>
+            </property>
+            <property type="int">
+                <name>repeat-count</name>
+                <value>1</value>
+            </property>
+            <property type="float">
+                <name>repeat-delay</name>
+                <value>0.1</value>
+            </property>
+            <macro-action type="logical-device">
+                <property type="input_type">
+                    <name>input-type</name>
+                    <value>button</value>
+                </property>
+                <property type="int">
+                    <name>input-id</name>
+                    <value>13</value>
+                </property>
+                <property type="bool">
+                    <name>value</name>
+                    <value>True</value>
+                </property>
+            </macro-action>
+            <property type="string">
                 <name>action-label</name>
-                <value>Map to Logical Device</value>
+                <value>Macro</value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>press</value>
+            </property>
+        </action>
+        <action id="a723de89-c59e-46bb-a5f6-eed8421a7bf2" type="macro">
+            <property type="bool">
+                <name>is-exclusive</name>
+                <value>False</value>
+            </property>
+            <property type="string">
+                <name>repeat-mode</name>
+                <value>Single</value>
+            </property>
+            <property type="int">
+                <name>repeat-count</name>
+                <value>1</value>
+            </property>
+            <property type="float">
+                <name>repeat-delay</name>
+                <value>0.1</value>
+            </property>
+            <macro-action type="logical-device">
+                <property type="input_type">
+                    <name>input-type</name>
+                    <value>button</value>
+                </property>
+                <property type="int">
+                    <name>input-id</name>
+                    <value>13</value>
+                </property>
+                <property type="bool">
+                    <name>value</name>
+                    <value>False</value>
+                </property>
+            </macro-action>
+            <property type="string">
+                <name>action-label</name>
+                <value>Macro</value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>release</value>
+            </property>
+        </action>
+        <action id="632e8b6a-4bb4-40ef-94a3-a1ffadd2fc17" type="condition">
+            <property type="string">
+                <name>logical-operator</name>
+                <value>all</value>
+            </property>
+            <condition>
+                <property type="string">
+                    <name>condition-type</name>
+                    <value>current_input</value>
+                </property>
+                <comparator>
+                    <property type="string">
+                        <name>comparator-type</name>
+                        <value>pressed</value>
+                    </property>
+                    <property type="bool">
+                        <name>is-pressed</name>
+                        <value>True</value>
+                    </property>
+                </comparator>
+            </condition>
+            <true-actions>
+                <action-id>ce15159c-42f5-45e5-befa-d663c13335c0</action-id>
+            </true-actions>
+            <false-actions>
+                <action-id>a723de89-c59e-46bb-a5f6-eed8421a7bf2</action-id>
+            </false-actions>
+            <property type="string">
+                <name>action-label</name>
+                <value>Condition</value>
             </property>
             <property type="activation-mode">
                 <name>activation-mode</name>
                 <value>both</value>
             </property>
         </action>
-        <action id="4ad8987d-e5ca-4903-ad5b-ba7b194b6687" type="map-to-logical-device">
-            <property type="int">
-                <name>logical-input-id</name>
-                <value>11</value>
-            </property>
-            <property type="input_type">
-                <name>logical-input-type</name>
-                <value>button</value>
-            </property>
-            <property type="bool">
-                <name>button-inverted</name>
-                <value>False</value>
-            </property>
+        <action id="bec157dd-21f3-4b04-8df1-2047b9665587" type="root">
+            <actions>
+                <action-id>632e8b6a-4bb4-40ef-94a3-a1ffadd2fc17</action-id>
+            </actions>
             <property type="string">
                 <name>action-label</name>
-                <value>Map to Logical Device</value>
+                <value>Root</value>
             </property>
             <property type="activation-mode">
                 <name>activation-mode</name>
-                <value>both</value>
+                <value>disallowed</value>
             </property>
         </action>
     </library>
@@ -245,5 +384,10 @@
         <mode>Default</mode>
     </modes>
     <scripts/>
-    <devices/>
+    <devices>
+        <device>
+            <device-id>06fea9f0-1fe9-11f1-8007-444553540000</device-id>
+            <device-name>T.16000M</device-name>
+        </device>
+    </devices>
 </profile>
