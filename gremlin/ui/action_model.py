@@ -5,13 +5,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
-from PySide6 import QtCore, QtQml
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6 import QtCore
 
+import gremlin.ui.type_aliases as ta
 from gremlin.config import Configuration
-from gremlin.error import MissingImplementationError, GremlinError
+from gremlin.error import GremlinError, MissingImplementationError
 from gremlin.plugin_manager import PluginManager
 from gremlin.profile import Library
 from gremlin.signal import signal
@@ -33,7 +33,7 @@ class SequenceIndex:
             parent_index: int | None,
             container_name: str | None,
             index: int,
-    ):
+    ) -> None:
         """Creates a new action index instance.
         This models the QModelIndex class.
         Args:
@@ -61,13 +61,13 @@ class SequenceIndex:
         return f"SID: c={self.container_name}: p={self.parent_index} i={self.index}"
 
 
-@QtQml.QmlElement
+@ta.QmlElement
 class ActionModel(QtCore.QObject):
 
     """QML model representing a single action instance."""
 
-    actionChanged = Signal()
-    actionLabelChanged = Signal()
+    actionChanged = QtCore.Signal()
+    actionLabelChanged = QtCore.Signal()
 
     def __init__(
             self,
@@ -76,7 +76,7 @@ class ActionModel(QtCore.QObject):
             action_index: SequenceIndex,
             parent_index: SequenceIndex,
             parent: QtCore.QObject
-    ):
+    ) -> None:
         super().__init__(parent)
 
         self._data = data
@@ -101,68 +101,68 @@ class ActionModel(QtCore.QObject):
     def library(self) -> Library:
         return self._binding_model.input_item_binding.library
 
-    @Property(type=InputType, notify=actionChanged)
+    @QtCore.Property(type=InputType, notify=actionChanged)
     def inputType(self) -> InputType:
         return self._binding_model.behavior_type
 
-    @Property(type="QVariant", notify=actionChanged)
+    @QtCore.Property(type="QVariant", notify=actionChanged)
     def actionData(self) -> AbstractActionData:
         return self._data
 
-    @Property(type=str, notify=actionChanged)
+    @QtCore.Property(type=str, notify=actionChanged)
     def name(self) -> str:
         return self._data.name
 
-    @Property(type=str, notify=actionChanged)
+    @QtCore.Property(type=str, notify=actionChanged)
     def qmlPath(self) -> str:
         return self._qml_path_impl()
 
-    @Property(type=str, constant=True)
+    @QtCore.Property(type=str, constant=True)
     def icon(self) -> str:
         return self._data.icon
 
-    @Property(type=list, notify=actionChanged)
+    @QtCore.Property(type=list, notify=actionChanged)
     def userFeedback(self) -> list[dict]:
         return [{
             "type": entry.feedback_type.value,
             "message": entry.message
         } for entry in self._data.user_feedback()]
 
-    @Property(type=bool, notify=actionChanged)
+    @QtCore.Property(type=bool, notify=actionChanged)
     def isValid(self) -> bool:
         return self._data.is_valid()
 
-    @Property(type=str, notify=actionChanged)
+    @QtCore.Property(type=str, notify=actionChanged)
     def id(self) -> str:
         return str(self._data.id)
 
-    @Property(type=int, notify=actionChanged)
+    @QtCore.Property(type=int, notify=actionChanged)
     def sequenceIndex(self) -> int:
         return self._sequence_index.index
 
-    @Property(type=str, notify=actionChanged)
+    @QtCore.Property(type=str, notify=actionChanged)
     def rootActionId(self) -> str:
         return str(self._binding_model.root_action.id)
 
-    @Property(type=bool, notify=actionChanged)
+    @QtCore.Property(type=bool, notify=actionChanged)
     def lastInContainer(self) -> bool:
         return self._binding_model.is_last_action_in_container(
             self._sequence_index
         )
 
-    @Property(type=bool, constant=True)
+    @QtCore.Property(type=bool, constant=True)
     def canChangeActivation(self) -> bool:
         return self._data.activation_mode != ActionActivationMode.Disallowed
 
-    @Property(type=str, notify=actionChanged)
+    @QtCore.Property(type=str, notify=actionChanged)
     def actionBehavior(self) -> str:
         return self._action_behavior()
 
-    @Property(type=list, notify=actionChanged)
+    @QtCore.Property(type=list, notify=actionChanged)
     def compatibleActions(self) -> List[str]:
         return self._compatible_actions()
 
-    @Slot(str, result=list)
+    @QtCore.Slot(str, result=list)
     def getActions(self, selector: str) -> List[ActionModel]:
         """Returns the collection of actions corresponding to the selector.
 
@@ -177,7 +177,7 @@ class ActionModel(QtCore.QObject):
             selector
         )
 
-    @Slot(str, str)
+    @QtCore.Slot(str, str)
     def appendAction(self, action_name: str, selector: str) -> None:
         """Adds a new action to the end of the specified container.
 
@@ -201,7 +201,7 @@ class ActionModel(QtCore.QObject):
             )
 
 
-    @Slot(int, int, str)
+    @QtCore.Slot(int, int, str)
     def dropAction(self, source: int, target: int, method: str) -> None:
         """Handles dropping an action on a UI item.
 
@@ -228,7 +228,7 @@ class ActionModel(QtCore.QObject):
             self._binding_model.parent().enumeration_index
         )
 
-    @Slot(int)
+    @QtCore.Slot(int)
     def removeAction(self, index: int) -> None:
         """Removes the given action from the specified container.
 
@@ -366,21 +366,21 @@ class ActionModel(QtCore.QObject):
         ]
         return sorted(filtered_names, key=lambda x: sort_names.index(x))
 
-    actionLabel = Property(
+    actionLabel = QtCore.Property(
         str,
         fget=_get_action_label,
         fset=_set_action_label,
         notify=actionChanged
     )
 
-    activateOnPress = Property(
+    activateOnPress = QtCore.Property(
         bool,
         fget=_get_activate_on_press,
         fset=_set_activate_on_press,
         notify=actionChanged
     )
 
-    activateOnRelease = Property(
+    activateOnRelease = QtCore.Property(
         bool,
         fget=_get_activate_on_release,
         fset=_set_activate_on_release,
