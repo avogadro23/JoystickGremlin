@@ -20,7 +20,7 @@ ApplicationWindow {
 
     // Basic application setup.
     title: backend.windowTitle
-    minimumWidth: 1200
+    minimumWidth: 1300
     minimumHeight: 700
     width: 1400
     height: 900
@@ -577,7 +577,7 @@ ApplicationWindow {
 
                 SplitView.fillWidth: true
                 SplitView.fillHeight: true
-                SplitView.minimumWidth: 800
+                SplitView.minimumWidth: 900
             }
         }
 
