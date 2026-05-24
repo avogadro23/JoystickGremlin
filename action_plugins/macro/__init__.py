@@ -9,6 +9,7 @@ import uuid
 from typing import (
     TYPE_CHECKING,
     List,
+    cast,
     override,
 )
 from xml.etree import ElementTree
@@ -673,94 +674,112 @@ class MacroFunctor(AbstractFunctor):
 
 
 class ActionListModel(QtCore.QAbstractListModel):
-    """QAbstractListModel that backs the macro action ListView.
+    """Model of the list of actions that constitute a macro.
 
-    Holds a reference to MacroData.actions (the authoritative list) and a
-    parallel list of *ActionModel wrappers. All mutations go through this
-    class so beginInsertRows/endInsertRows (etc.) are always fired correctly.
+    Keeps the action data and action representation in sync.
     """
 
-    _MODEL_DATA_ROLE = QtCore.Qt.ItemDataRole.UserRole + 1
-    _ACTION_TYPE_ROLE = QtCore.Qt.ItemDataRole.UserRole + 2
+    roles = {
+        QtCore.Qt.ItemDataRole.UserRole + 1: QtCore.QByteArray(b"modelData"),
+        QtCore.Qt.ItemDataRole.UserRole + 2: QtCore.QByteArray(b"actionType"),
+    }
 
-    def __init__(
-        self,
-        data_actions: list,
-        model_lookup: dict,
-        parent: QtCore.QObject,
-    ) -> None:
-        super().__init__(parent)
-        self._data_actions = data_actions
-        self._model_lookup = model_lookup
+    def __init__(self, macro_model: MacroModel) -> None:
+        super().__init__(macro_model)
+        self._macro_model = macro_model
         self._wrappers: list[AbstractActionModel] = [
-            self._make_wrapper(a) for a in data_actions
+            self._create_action_model(a) for a in self._macro_model.macro_data.actions
         ]
 
-    def rowCount(self, parent: QtCore.QModelIndex = QtCore.QModelIndex()) -> int:
-        return len(self._data_actions)
+    def rowCount(self, parent: ta.MI = QtCore.QModelIndex()) -> int:
+        return len(self._macro_model.macro_data.actions)
 
     def data(
         self,
-        index: QtCore.QModelIndex,
+        index: ta.MI,
         role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> AbstractActionModel | str | None:
-        if not index.isValid() or not (0 <= index.row() < len(self._data_actions)):
+        actions = self._macro_model.macro_data.actions
+        if not index.isValid() or not (0 <= index.row() < len(actions)):
             return None
-        row = index.row()
-        if role == self._MODEL_DATA_ROLE:
-            return self._wrappers[row]
-        if role == self._ACTION_TYPE_ROLE:
-            return self._data_actions[row].tag
-        return None
+        match cast(str, self.roles.get(role, "")):
+            case "modelData":
+                return self._wrappers[index.row()]
+            case "actionType":
+                return self._macro_model.macro_data.actions[index.row()].tag
+            case _:
+                return None
 
     def roleNames(self) -> dict:
-        return {
-            self._MODEL_DATA_ROLE: b"modelData",
-            self._ACTION_TYPE_ROLE: b"actionType",
-        }
+        return self.roles
 
     def append(self, action: macro.AbstractAction) -> None:
-        row = len(self._data_actions)
+        """Adds the given action at the end of the list.
+
+        Args:
+            action: The action added to the end of the list.
+        """
+        row = len(self._macro_model.macro_data.actions)
         self.beginInsertRows(QtCore.QModelIndex(), row, row)
-        self._data_actions.append(action)
-        self._wrappers.append(self._make_wrapper(action))
+        self._macro_model.macro_data.actions.append(action)
+        self._wrappers.append(self._create_action_model(action))
         self.endInsertRows()
 
     def remove(self, index: int) -> None:
-        if not (0 <= index < len(self._data_actions)):
+        """Removes the action at the specified index.
+
+        Args:
+            index: The index of the action to remove.
+        """
+        if not (0 <= index < len(self._macro_model.macro_data.actions)):
             return
         self.beginRemoveRows(QtCore.QModelIndex(), index, index)
-        del self._data_actions[index]
+        del self._macro_model.macro_data.actions[index]
         del self._wrappers[index]
         self.endRemoveRows()
 
-    def move(self, source_index: int, dest_after_remove: int) -> None:
-        """Move item from source_index; dest_after_remove is the insertion
-        point in the list AFTER source has been removed from it."""
-        if not (0 <= source_index < len(self._data_actions)):
+    def move_from_to(self, source_index: int, destination_index: int) -> None:
+        """Move an item from a source to a destination index.
+
+        Args:
+            source_index: The index of the item to move.
+            destination_index: The index to move the item to.
+        """
+        item_count = len(self._macro_model.macro_data.actions)
+        if not (0 <= source_index < item_count) or source_index == destination_index:
             return
+
+        # Obtain object in fron of which we wish to insert the source item. If
+        # the source item is to be inserted at the end of the list, the
+        # target will be None.
+        target = self._macro_model.macro_data.actions[destination_index] \
+            if destination_index < item_count else None
+
+        # Remove the source item and emit required signals.
         self.beginRemoveRows(QtCore.QModelIndex(), source_index, source_index)
-        action = self._data_actions.pop(source_index)
+        action = self._macro_model.macro_data.actions.pop(source_index)
         wrapper = self._wrappers.pop(source_index)
         self.endRemoveRows()
 
-        dest = max(0, min(dest_after_remove, len(self._data_actions)))
-        self.beginInsertRows(QtCore.QModelIndex(), dest, dest)
-        self._data_actions.insert(dest, action)
-        self._wrappers.insert(dest, wrapper)
+        # Insert the source item at the correct index and emit required signals.
+        insertion_index = item_count
+        if target is not None:
+            insertion_index = self._macro_model.macro_data.actions.index(target)
+        self.beginInsertRows(QtCore.QModelIndex(), insertion_index, insertion_index)
+        self._macro_model.macro_data.actions.insert(insertion_index, action)
+        self._wrappers.insert(insertion_index, wrapper)
         self.endInsertRows()
 
-    def truncate_from(self, index: int) -> None:
-        last = len(self._data_actions) - 1
-        if index > last:
-            return
-        self.beginRemoveRows(QtCore.QModelIndex(), index, last)
-        del self._data_actions[index:]
-        del self._wrappers[index:]
-        self.endRemoveRows()
+    def _create_action_model(self, action: macro.AbstractAction) -> AbstractActionModel:
+        """Returns the action model corresponding to the given action.
 
-    def _make_wrapper(self, action: macro.AbstractAction) -> AbstractActionModel:
-        return self._model_lookup[action.tag](action, None)
+        Args:
+            action: The action to return the model for.
+
+        Returns:
+            QML model instance for the given action instance.
+        """
+        return MacroModel.model_lookup[action.tag](action, None)
 
 
 class MacroModel(ActionModel):
