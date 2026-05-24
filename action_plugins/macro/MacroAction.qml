@@ -94,13 +94,21 @@ Item {
             Layout.bottomMargin: -10
         }
 
-        ListView {
+        ScrollView {
             Layout.fillWidth: true
-            implicitHeight: contentHeight
-            spacing: 5
+            Layout.preferredHeight: Math.min(_actionList.contentHeight, 400)
+            clip: true
 
-            model: _root.action.actions
-            delegate: _delegateChooser
+            ListView {
+                id: _actionList
+                width: parent.width
+                spacing: 1
+
+                model: _root.action.actions
+                delegate: _delegateChooser
+
+                onCountChanged: () => { positionViewAtEnd() }
+            }
         }
 
         RowLayout {
@@ -135,6 +143,49 @@ Item {
             }
 
             LayoutHorizontalSpacer {}
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+
+            CheckBox {
+                text: "Keyboard"
+                checked: _root.action.recordKeyboard
+                onToggled: () => { _root.action.recordKeyboard = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Mouse"
+                checked: _root.action.recordMouse
+                onToggled: () => { _root.action.recordMouse = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Joystick"
+                checked: _root.action.recordJoystick
+                onToggled: () => { _root.action.recordJoystick = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Timings"
+                checked: _root.action.recordTimings
+                onToggled: () => { _root.action.recordTimings = checked }
+                enabled: !_root.action.isRecording
+            }
+
+            LayoutHorizontalSpacer {}
+
+            Button {
+                visible: !_root.action.isRecording
+                text: "Record"
+                onClicked: () => { _root.action.startRecording() }
+            }
+            Button {
+                visible: _root.action.isRecording
+                highlighted: true
+                text: "Stop"
+                onPressed: () => { _root.action.stopRecording() }
+            }
         }
     }
 
@@ -535,7 +586,7 @@ Item {
     // Predefined button that removes a given action
     component DeleteButton : IconButton {
         text: bsi.icons.remove
-        font.pixelSize: 16
+        font.pixelSize: 13
 
         onClicked: () => { _root.action.removeAction(index) }
     }
@@ -550,7 +601,7 @@ Item {
 
         text: bsi.icons.drag_handle + iconName
 
-        font.pixelSize: 20
+        font.pixelSize: 14
 
         MouseArea {
             id: _dragArea
@@ -573,7 +624,7 @@ Item {
         property int targetIndex
         property string insertionMode: "append"
 
-        height: 20
+        height: 8
 
         Layout.fillWidth: true
 
@@ -617,8 +668,7 @@ Item {
         property alias actionItem: _actionLoader.sourceComponent
 
         // Ensure entire width is taken up
-        anchors.left: parent.left
-        anchors.right: parent.right
+        width: ListView.view ? ListView.view.width : 0
         spacing: 0
 
         // Define drag&drop behavior
@@ -640,11 +690,12 @@ Item {
         // Widget content assembly
         RowLayout {
             id: _actionContent
+            spacing: 4
 
             Icon {
                 id: _icon
 
-                Layout.alignment: Qt.AlignTop
+                Layout.alignment: Qt.AlignVCenter
                 font.family: "bootstrap-icons"
 
                 iconName: icon
@@ -652,8 +703,8 @@ Item {
             }
 
             Label {
-                Layout.alignment: Qt.AlignTop
-                Layout.preferredWidth: 125
+                Layout.alignment: Qt.AlignVCenter
+                Layout.preferredWidth: 85
 
                 text: label
             }
@@ -668,12 +719,14 @@ Item {
 
             LayoutHorizontalSpacer {}
 
-            DeleteButton {}
+            DeleteButton {
+                Layout.rightMargin: 10
+            }
         }
 
         ActionDrop {
-            Layout.bottomMargin: -10
-            Layout.topMargin: -10
+            Layout.bottomMargin: -4
+            Layout.topMargin: -4
 
             targetIndex: index
         }
