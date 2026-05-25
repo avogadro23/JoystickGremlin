@@ -23,7 +23,6 @@ from gremlin import (
     event_handler,
     keyboard,
     macro,
-    shared_state,
     util,
 )
 from gremlin.base_classes import (
@@ -52,6 +51,7 @@ from gremlin.ui.action_model import (
     SequenceIndex,
 )
 from gremlin.ui.device import InputIdentifier
+from gremlin.ui.util import MacroRecorder
 
 if TYPE_CHECKING:
     import gremlin.ui.type_aliases as ta
@@ -684,29 +684,32 @@ class ActionListModel(QtCore.QAbstractListModel):
         QtCore.Qt.ItemDataRole.UserRole + 2: QtCore.QByteArray(b"actionType"),
     }
 
-    def __init__(self, macro_model: MacroModel) -> None:
-        super().__init__(macro_model)
-        self._macro_model = macro_model
+    def __init__(
+            self,
+            actions: list[macro.AbstractAction],
+            parent: QtCore.QObject
+    ) -> None:
+        super().__init__(parent)
+        self._actions = actions
         self._wrappers: list[AbstractActionModel] = [
-            self._create_action_model(a) for a in self._macro_model.macro_data.actions
+            self._create_action_model(action) for action in self._actions
         ]
 
     def rowCount(self, parent: ta.MI = QtCore.QModelIndex()) -> int:
-        return len(self._macro_model.macro_data.actions)
+        return len(self._actions)
 
     def data(
         self,
         index: ta.MI,
         role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> AbstractActionModel | str | None:
-        actions = self._macro_model.macro_data.actions
-        if not index.isValid() or not (0 <= index.row() < len(actions)):
+        if not index.isValid() or not (0 <= index.row() < len(self._actions)):
             return None
         match cast(str, self.roles.get(role, "")):
             case "modelData":
                 return self._wrappers[index.row()]
             case "actionType":
-                return self._macro_model.macro_data.actions[index.row()].tag
+                return self._actions[index.row()].tag
             case _:
                 return None
 
@@ -719,9 +722,9 @@ class ActionListModel(QtCore.QAbstractListModel):
         Args:
             action: The action added to the end of the list.
         """
-        row = len(self._macro_model.macro_data.actions)
+        row = len(self._actions)
         self.beginInsertRows(QtCore.QModelIndex(), row, row)
-        self._macro_model.macro_data.actions.append(action)
+        self._actions.append(action)
         self._wrappers.append(self._create_action_model(action))
         self.endInsertRows()
 
@@ -731,10 +734,10 @@ class ActionListModel(QtCore.QAbstractListModel):
         Args:
             index: The index of the action to remove.
         """
-        if not (0 <= index < len(self._macro_model.macro_data.actions)):
+        if not (0 <= index < len(self._actions)):
             return
         self.beginRemoveRows(QtCore.QModelIndex(), index, index)
-        del self._macro_model.macro_data.actions[index]
+        del self._actions[index]
         del self._wrappers[index]
         self.endRemoveRows()
 
@@ -745,28 +748,28 @@ class ActionListModel(QtCore.QAbstractListModel):
             source_index: The index of the item to move.
             destination_index: The index to move the item to.
         """
-        item_count = len(self._macro_model.macro_data.actions)
+        item_count = len(self._actions)
         if not (0 <= source_index < item_count) or source_index == destination_index:
             return
 
         # Obtain object in fron of which we wish to insert the source item. If
         # the source item is to be inserted at the end of the list, the
         # target will be None.
-        target = self._macro_model.macro_data.actions[destination_index] \
+        target = self._actions[destination_index] \
             if destination_index < item_count else None
 
         # Remove the source item and emit required signals.
         self.beginRemoveRows(QtCore.QModelIndex(), source_index, source_index)
-        action = self._macro_model.macro_data.actions.pop(source_index)
+        action = self._actions.pop(source_index)
         wrapper = self._wrappers.pop(source_index)
         self.endRemoveRows()
 
         # Insert the source item at the correct index and emit required signals.
         insertion_index = item_count
         if target is not None:
-            insertion_index = self._macro_model.macro_data.actions.index(target)
+            insertion_index = self._actions.index(target)
         self.beginInsertRows(QtCore.QModelIndex(), insertion_index, insertion_index)
-        self._macro_model.macro_data.actions.insert(insertion_index, action)
+        self._actions.insert(insertion_index, action)
         self._wrappers.insert(insertion_index, wrapper)
         self.endInsertRows()
 
@@ -787,8 +790,6 @@ class MacroModel(ActionModel):
     # Signal emitted when the description variable's content changes
     changed = QtCore.Signal()
     recordingChanged = QtCore.Signal()
-    recordingFinished = QtCore.Signal(bool)
-    recordingActionsAdded = QtCore.Signal(list)
 
     action_lookup = {
         "joystick": macro.JoystickAction.create,
@@ -812,24 +813,22 @@ class MacroModel(ActionModel):
 
     def __init__(
             self,
-            data: AbstractActionData,
+            data:  AbstractActionData,
             binding_model: InputItemBindingModel,
             action_index: SequenceIndex,
             parent_index: SequenceIndex,
             parent: QtCore.QObject
     ) -> None:
         super().__init__(data, binding_model, action_index, parent_index, parent)
-        self._action_list_model = ActionListModel(
-            self._data.actions, self.model_lookup, self
-        )
-        self._recorder = macro.MacroRecorder()
-        self._is_recording = False
-        self._recording_start_index = 0
-        self.recordingFinished.connect(self._apply_recorded_actions)
-        self.recordingActionsAdded.connect(
-            self._on_recording_actions_added,
-            QtCore.Qt.QueuedConnection
-        )
+        self._action_list_model = ActionListModel(cast(MacroData, data).actions, self)
+        self._recorder = MacroRecorder(self._action_list_model.append)
+
+        self._events_to_record: list[InputType] = [
+            InputType.JoystickAxis,
+            InputType.JoystickButton,
+            InputType.JoystickHat,
+        ]
+        self._record_timings: bool = False
 
     def _qml_path_impl(self) -> str:
         return "file:///" + QtCore.QFile(
@@ -840,12 +839,6 @@ class MacroModel(ActionModel):
         return  self._binding_model.get_action_model_by_sidx(
             self._parent_sequence_index.index
         ).actionBehavior
-
-    actions = QtCore.Property(
-        QtCore.QObject,
-        fget=lambda self: self._action_list_model,
-        constant=True,
-    )
 
     @QtCore.Slot(str)
     def addAction(self, name: str) -> None:
@@ -866,97 +859,51 @@ class MacroModel(ActionModel):
     ) -> None:
         match mode:
             case "append":
-                # After source is removed, target shifts left by 1 if source < target
-                dest = target_index - (1 if source_index < target_index else 0) + 1
-                self._action_list_model.move(source_index, dest)
+                self._action_list_model.move_from_to(source_index, target_index + 1)
             case "prepend":
-                self._action_list_model.move(source_index, 0)
+                self._action_list_model.move_from_to(source_index, 0)
             case _:
-                raise GremlinError(f"Invalid insertion mode '{mode}'")
+                raise GremlinError(f"Macro: Invalid insertion mode '{mode}'")
         self.changed.emit()
 
     @QtCore.Slot()
     def startRecording(self) -> None:
-        if self._is_recording:
-            return
-        self._is_recording = True
-        self._recording_start_index = len(self._data.actions)
-        shared_state.set_suspend_input_highlighting(True)
-        self.recordingChanged.emit()
-        self._recorder.start(
-            self.recordingFinished.emit,
-            action_callback=self.recordingActionsAdded.emit,
-        )
+        if not self._recorder.is_recording:
+            self._recorder.start(self._events_to_record, self._record_timings)
+            self.recordingChanged.emit()
 
     @QtCore.Slot()
     def stopRecording(self) -> None:
-        self._recorder.stop(abort=False)
+        if self._recorder.is_recording:
+            self._recorder.stop()
+            self.recordingChanged.emit()
 
-    @QtCore.Slot(bool)
-    def _apply_recorded_actions(self, aborted: bool) -> None:
-        self._is_recording = False
-        shared_state.set_suspend_input_highlighting_delayed()
-        self.recordingChanged.emit()
-        if aborted:
-            self._action_list_model.truncate_from(self._recording_start_index)
-        self.changed.emit()
+    def _get_record_event(self, event_type: InputType) -> bool:
+        return event_type in self._events_to_record
 
-    @QtCore.Slot(list)
-    def _on_recording_actions_added(self, actions: list) -> None:
-        if not self._is_recording:
-            return
-        for action in actions:
-            self._action_list_model.append(action)
-
-    _JOYSTICK_TYPES = (
-        InputType.JoystickButton,
-        InputType.JoystickAxis,
-        InputType.JoystickHat,
-    )
-
-    def _get_record_keyboard(self) -> bool:
-        return InputType.Keyboard in self._recorder.event_types
-
-    def _set_record_keyboard(self, value: bool) -> None:
-        types = self._recorder.event_types
-        if value and InputType.Keyboard not in types:
-            types.append(InputType.Keyboard)
-        elif not value:
-            self._recorder.event_types = [t for t in types if t != InputType.Keyboard]
-        self.recordingChanged.emit()
-
-    def _get_record_mouse(self) -> bool:
-        return InputType.Mouse in self._recorder.event_types
-
-    def _set_record_mouse(self, value: bool) -> None:
-        types = self._recorder.event_types
-        if value and InputType.Mouse not in types:
-            types.append(InputType.Mouse)
-        elif not value:
-            self._recorder.event_types = [t for t in types if t != InputType.Mouse]
-        self.recordingChanged.emit()
-
-    def _get_record_joystick(self) -> bool:
-        return any(t in self._recorder.event_types for t in self._JOYSTICK_TYPES)
-
-    def _set_record_joystick(self, value: bool) -> None:
-        types = self._recorder.event_types
-        if value:
-            for t in self._JOYSTICK_TYPES:
-                if t not in types:
-                    types.append(t)
-        else:
-            self._recorder.event_types = [
-                t for t in types if t not in self._JOYSTICK_TYPES
-            ]
-        self.recordingChanged.emit()
+    def _set_record_event(
+        self, event_types: InputType | tuple[InputType, ...], value: bool
+    ) -> None:
+        types = event_types if isinstance(event_types, tuple) else (event_types,)
+        if any((event_type in self._events_to_record) != value for event_type in types):
+            if value:
+                for event_type in types:
+                    if event_type not in self._events_to_record:
+                        self._events_to_record.append(event_type)
+            else:
+                self._events_to_record = [
+                    event_type for event_type in self._events_to_record
+                    if event_type not in types
+                ]
+            self.recordingChanged.emit()
 
     def _get_record_timings(self) -> bool:
-        return self._recorder.record_timings
+        return self._record_timings
 
     def _set_record_timings(self, value: bool) -> None:
-        self._recorder.record_timings = value
-        self.recordingChanged.emit()
+        if value != self._record_timings:
+            self._record_timings = value
+            self.recordingChanged.emit()
 
     def _get_repeat_count(self) -> int:
         if self._data.repeat_mode == MacroRepeatModes.Count:
@@ -999,6 +946,12 @@ class MacroModel(ActionModel):
             self._data.is_exclusive = state
             self.changed.emit()
 
+    actions = QtCore.Property(
+        QtCore.QObject,
+        fget=lambda self: self._action_list_model,
+        constant=True,
+    )
+
     repeatCount = QtCore.Property(
         int,
         fget=_get_repeat_count,
@@ -1029,25 +982,39 @@ class MacroModel(ActionModel):
 
     isRecording = QtCore.Property(
         bool,
-        fget=lambda self: self._is_recording,
+        fget=lambda self: self._recorder.is_recording,
         notify=recordingChanged
     )
     recordKeyboard = QtCore.Property(
         bool,
-        fget=_get_record_keyboard,
-        fset=_set_record_keyboard,
+        fget=lambda self: self._get_record_event(InputType.Keyboard),
+        fset=lambda self, value: self._set_record_event(InputType.Keyboard, value),
         notify=recordingChanged
     )
     recordMouse = QtCore.Property(
         bool,
-        fget=_get_record_mouse,
-        fset=_set_record_mouse,
+        fget=lambda self: self._get_record_event(InputType.Mouse),
+        fset=lambda self, value: self._set_record_event(InputType.Mouse, value),
         notify=recordingChanged
     )
-    recordJoystick = QtCore.Property(
+    recordJoystickButton = QtCore.Property(
         bool,
-        fget=_get_record_joystick,
-        fset=_set_record_joystick,
+        fget=lambda self: self._get_record_event(InputType.JoystickButton),
+        fset=lambda self, value: self._set_record_event(
+            InputType.JoystickButton, value
+        ),
+        notify=recordingChanged
+    )
+    recordJoystickAxis = QtCore.Property(
+        bool,
+        fget=lambda self: self._get_record_event(InputType.JoystickAxis),
+        fset=lambda self, value: self._set_record_event(InputType.JoystickAxis, value),
+        notify=recordingChanged
+    )
+    recordJoystickHat = QtCore.Property(
+        bool,
+        fget=lambda self: self._get_record_event(InputType.JoystickHat),
+        fset=lambda self, value: self._set_record_event(InputType.JoystickHat, value),
         notify=recordingChanged
     )
     recordTimings = QtCore.Property(

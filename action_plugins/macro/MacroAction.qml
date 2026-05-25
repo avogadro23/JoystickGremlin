@@ -160,10 +160,26 @@ Item {
                 onToggled: () => { _root.action.recordMouse = checked }
                 enabled: !_root.action.isRecording
             }
-            CheckBox {
+            Label {
                 text: "Joystick"
-                checked: _root.action.recordJoystick
-                onToggled: () => { _root.action.recordJoystick = checked }
+                Layout.leftMargin: 10
+            }
+            CheckBox {
+                text: "Axis"
+                checked: _root.action.recordJoystickAxis
+                onToggled: () => { _root.action.recordJoystickAxis = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Button"
+                checked: _root.action.recordJoystickButton
+                onToggled: () => { _root.action.recordJoystickButton = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Hat"
+                checked: _root.action.recordJoystickHat
+                onToggled: () => { _root.action.recordJoystickHat = checked }
                 enabled: !_root.action.isRecording
             }
             CheckBox {

@@ -19,7 +19,6 @@ from threading import (
     Thread,
 )
 from typing import (
-    Callable,
     Tuple,
     override,
 )
@@ -31,9 +30,7 @@ from gremlin import (
     event_handler,
     mode_manager,
     sendinput,
-    shared_state,
     util,
-    windows_event_hook,
 )
 from gremlin.common import SingletonDecorator
 from gremlin.config import Configuration
@@ -47,7 +44,6 @@ from gremlin.keyboard import (
 from gremlin.logical_device import LogicalDevice
 from gremlin.types import (
     AxisMode,
-    HatDirection,
     InputType,
     MouseButton,
     PropertyType,
@@ -834,150 +830,6 @@ class PauseAction(AbstractAction):
 
     def is_valid(self) -> bool:
         return True
-
-
-class MacroRecorder:
-
-    """Records live keyboard/mouse/joystick inputs into an AbstractAction list.
-
-    Configure event_types and record_timings before calling start().
-    ESC press is forwarded to esc_callback (bool: pressed) so the caller
-    can implement hold-to-abort using a timer on the Qt main thread.
-    done_callback(abort: bool) is called when recording ends.
-    action_callback(actions: list[AbstractAction]) is called after each
-    recorded event with the new actions (pause + action) for live UI updates.
-    """
-
-    _AXIS_THRESHOLD = 0.05
-
-    def __init__(self) -> None:
-        self._actions: list[AbstractAction] = []
-        self._last_event_time: float = 0.0
-        self._last_axis_values: dict[tuple, float] = {}
-        self._is_recording: bool = False
-        self._lock = Lock()
-        self._done_callback: Callable[[bool], None] | None = None
-        self._action_callback: Callable[[list], None] | None = None
-        self.event_types: list[InputType] = [
-            InputType.Keyboard,
-            InputType.Mouse,
-            InputType.JoystickButton,
-            InputType.JoystickAxis,
-            InputType.JoystickHat,
-        ]
-        self.record_timings: bool = True
-
-    def start(
-        self,
-        done_callback: Callable[[bool], None],
-        action_callback: Callable[[list], None] | None = None,
-    ) -> None:
-        if self._is_recording:
-            return
-        self._actions = []
-        self._last_event_time = 0.0
-        self._last_axis_values = {}
-        self._is_recording = True
-        self._done_callback = done_callback
-        self._action_callback = action_callback
-        el = event_handler.EventListener()
-        el.keyboard_event.connect(self._on_keyboard_event)
-        if InputType.Mouse in self.event_types:
-            windows_event_hook.MouseHook().start()
-            el.mouse_event.connect(self._on_mouse_event)
-        if any(t in self.event_types for t in (
-            InputType.JoystickButton, InputType.JoystickAxis, InputType.JoystickHat
-        )):
-            el.joystick_event.connect(self._on_joystick_event)
-
-    def stop(self, abort: bool = False) -> None:
-        if not self._is_recording:
-            return
-        self._is_recording = False
-        el = event_handler.EventListener()
-        for sig, handler in (
-            (el.keyboard_event, self._on_keyboard_event),
-            (el.mouse_event, self._on_mouse_event),
-            (el.joystick_event, self._on_joystick_event),
-        ):
-            try:
-                sig.disconnect(handler)
-            except RuntimeError:
-                pass
-        if InputType.Mouse in self.event_types:
-            windows_event_hook.MouseHook().stop()
-        if self._done_callback is not None:
-            self._done_callback(abort)
-        self._done_callback = None
-
-    def _on_keyboard_event(self, event: event_handler.Event) -> None:
-        if not self._is_recording:
-            return
-        if InputType.Keyboard not in self.event_types:
-            return
-        kb_key = key_from_code(*event.identifier)
-        with self._lock:
-            pause = self._insert_pause()
-            action = KeyAction(kb_key, event.is_pressed)
-            self._actions.append(action)
-        self._notify_action_callback(pause, action)
-
-    def _on_mouse_event(self, event: event_handler.Event) -> None:
-        if not self._is_recording:
-            return
-        with self._lock:
-            pause = self._insert_pause()
-            action = MouseButtonAction(event.identifier, event.is_pressed)
-            self._actions.append(action)
-        self._notify_action_callback(pause, action)
-
-    def _on_joystick_event(self, event: event_handler.Event) -> None:
-        if not self._is_recording or event.event_type not in self.event_types:
-            return
-        if event.event_type == InputType.JoystickAxis:
-            axis_key = (event.device_guid, event.identifier)
-            last = self._last_axis_values.get(axis_key)
-            if last is not None and abs(event.value - last) < self._AXIS_THRESHOLD:
-                return
-            self._last_axis_values[axis_key] = event.value
-        elif event.event_type == InputType.JoystickHat:
-            if event.value == HatDirection.Center:
-                return
-        shared_state.set_suspend_input_highlighting(True)
-        value = (
-            event.is_pressed
-            if event.event_type == InputType.JoystickButton
-            else event.value
-        )
-        with self._lock:
-            pause = self._insert_pause()
-            action = JoystickAction(
-                event.device_guid, event.event_type, event.identifier, value
-            )
-            self._actions.append(action)
-        self._notify_action_callback(pause, action)
-
-    def _insert_pause(self) -> PauseAction | None:
-        """Insert a PauseAction for elapsed time since last event. Lock must be held."""
-        now = time.monotonic()
-        if self.record_timings and self._last_event_time > 0.0:
-            pause = PauseAction(now - self._last_event_time)
-            self._actions.append(pause)
-            self._last_event_time = now
-            return pause
-        self._last_event_time = now
-        return None
-
-    def _notify_action_callback(
-        self, pause: PauseAction | None, action: AbstractAction
-    ) -> None:
-        if self._action_callback is None:
-            return
-        actions: list[AbstractAction] = []
-        if pause is not None:
-            actions.append(pause)
-        actions.append(action)
-        self._action_callback(actions)
 
 
 class VJoyAction(AbstractAction):

@@ -4,12 +4,16 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import logging
 import threading
+import time
+from collections.abc import Callable
+from pathlib import Path
+from threading import Lock
 from typing import (
+    TYPE_CHECKING,
     Any,
     List,
-    TYPE_CHECKING,
 )
 
 from PySide6 import (
@@ -25,9 +29,17 @@ from gremlin import (
     shared_state,
     windows_event_hook,
 )
+from gremlin.keyboard import key_from_code
+from gremlin.macro import (
+    AbstractAction,
+    JoystickAction,
+    KeyAction,
+    MouseButtonAction,
+    PauseAction,
+)
 from gremlin.types import (
-    InputType,
     HatDirection,
+    InputType,
     MouseButton,
 )
 
@@ -90,12 +102,12 @@ class InputListenerModel(QtCore.QObject):
                 InputType.JoystickHat in self._event_types:
             try:
                 event_listener.joystick_event.disconnect(self._joy_event_cb)
-            except RuntimeError as e:
+            except RuntimeError:
                 pass
         if InputType.Mouse in self._event_types:
             try:
                 event_listener.mouse_event.disconnect(self._mouse_event_cb)
-            except RuntimeError as e:
+            except RuntimeError:
                 pass
 
         # Stop mouse hook in case it is running
@@ -281,6 +293,123 @@ class InputListenerModel(QtCore.QObject):
         fset=_set_event_types,
         notify=eventTypesChanged
     )
+
+
+class MacroRecorder:
+    """Records keyboard, mouse, and joystick inputs and creates appropriate
+    macro actions.
+
+    The class requires a callback that is called for every recorded action. It is the
+    callback's responsability to handle the addition of the new action.
+    """
+
+    _AXIS_THRESHOLD = 0.05
+
+    def __init__(
+        self,
+        append_action_callback: Callable[[AbstractAction], None],
+    ) -> None:
+        self._valid_event_types: list[InputType] = []
+        self._record_timings: bool = False
+        self._last_event_time: float = 0.0
+        self._last_axis_values: dict[event_handler.Event, float] = {}
+        self._is_recording: bool = False
+        self._append_action_callback = append_action_callback
+        self._lock = Lock()
+
+    @property
+    def is_recording(self) -> bool:
+        return self._is_recording
+
+    def start(
+        self,
+        events_to_record: list[InputType],
+        record_timings: bool
+    ) -> None:
+        if self._is_recording:
+            logging.getLogger("system").warning(
+                "MacroRecorder.start() called while already recording"
+            )
+            return
+
+        # Configure recording parameters.
+        self._valid_event_types = events_to_record
+        self._record_timings = record_timings
+
+        # Reset internal state.
+        self._last_event_time = 0.0
+        self._last_axis_values = {}
+        self._is_recording = True
+        shared_state.set_suspend_input_highlighting(True)
+
+        # Hookup required event listeners.
+        el = event_handler.EventListener()
+        if InputType.Keyboard in self._valid_event_types:
+            el.keyboard_event.connect(self._on_event)
+        if InputType.Mouse in self._valid_event_types:
+            windows_event_hook.MouseHook().start()
+            el.mouse_event.connect(self._on_event)
+        if any(input_type in self._valid_event_types for input_type in (
+            InputType.JoystickButton, InputType.JoystickAxis, InputType.JoystickHat
+        )):
+            el.joystick_event.connect(self._on_event)
+
+    def stop(self) -> None:
+        if not self._is_recording:
+            logging.getLogger("system").warning(
+                "MacroRecorder.stop() called while not recording"
+            )
+            return
+
+        # Attempt to disconnect all event handlers, failure is silently ignored.
+        el = event_handler.EventListener()
+        for event_signal in (el.keyboard_event, el.mouse_event, el.joystick_event):
+            try:
+                event_signal.disconnect(self._on_event)
+            except RuntimeError:
+                pass
+        if InputType.Mouse in self._valid_event_types:
+            windows_event_hook.MouseHook().stop()
+        shared_state.set_suspend_input_highlighting(False)
+        self._is_recording = False
+
+    def _on_event(self, event: event_handler.Event) -> None:
+        if not self._is_recording or event.event_type not in self._valid_event_types:
+            return
+
+        if event.event_type == InputType.JoystickAxis:
+            if abs(event.value - self._last_axis_values.get(event, 1e6)) <= self._AXIS_THRESHOLD:
+                return
+            self._last_axis_values[event] = event.value
+
+        match event.event_type:
+            case InputType.Keyboard:
+                action = KeyAction(key_from_code(*event.identifier), event.is_pressed)
+            case InputType.Mouse:
+                action = MouseButtonAction(event.identifier, event.is_pressed)
+            case InputType.JoystickButton:
+                action = JoystickAction(
+                    event.device_guid,
+                    event.event_type,
+                    event.identifier,
+                    event.is_pressed,
+                )
+            case InputType.JoystickAxis | InputType.JoystickHat:
+                action = JoystickAction(
+                    event.device_guid,
+                    event.event_type,
+                    event.identifier,
+                    event.value,
+                )
+            case _:
+                return
+
+        with self._lock:
+            now = time.monotonic()
+            if self._record_timings and self._last_event_time > 0.0:
+                self._append_action_callback(PauseAction(now - self._last_event_time))
+            self._last_event_time = now
+            self._append_action_callback(action)
 
 
 @QtQml.QmlElement
