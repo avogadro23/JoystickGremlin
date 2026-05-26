@@ -13,6 +13,7 @@ import Gremlin.Profile
 import Gremlin.Style
 import "../../qml"
 import "../../qml/helpers.js" as Helpers
+import "../../qml/compact" as Compact
 
 
 Item {
@@ -99,15 +100,21 @@ Item {
             Layout.preferredHeight: Math.min(_actionList.contentHeight, 400)
             clip: true
 
-            ListView {
+            JGListView {
                 id: _actionList
+
                 width: parent.width
-                spacing: 1
+                spacing: 5
+                scrollbarAlwaysVisible: true
 
                 model: _root.action.actions
                 delegate: _delegateChooser
 
-                onCountChanged: () => { positionViewAtEnd() }
+                onCountChanged: () => {
+                    // Update model with a delay to ensure the list view scrolls
+                    // properly to the bottom.
+                    Qt.callLater(positionViewAtEnd)
+                }
             }
         }
 
@@ -145,6 +152,7 @@ Item {
             LayoutHorizontalSpacer {}
         }
 
+        // Action recording configuration controls.
         RowLayout {
             Layout.fillWidth: true
 
@@ -234,7 +242,7 @@ Item {
                     LayoutHorizontalSpacer {}
 
                     // Show different components based on input
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         visible: modelData.inputType === "button"
 
                         isPressed: modelData.isPressed
@@ -303,7 +311,7 @@ Item {
                         eventTypes: ["key"]
                     }
 
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         isPressed: modelData.isPressed
                         onStateModified: (isPressed) => {
                             modelData.isPressed = isPressed
@@ -685,7 +693,7 @@ Item {
 
         // Ensure entire width is taken up
         width: ListView.view ? ListView.view.width : 0
-        spacing: 0
+        // spacing: 0
 
         // Define drag&drop behavior
         Drag.dragType: Drag.Automatic
@@ -720,7 +728,7 @@ Item {
 
             Label {
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: 85
+                Layout.preferredWidth: 150
 
                 text: label
             }
@@ -730,7 +738,7 @@ Item {
                 id: _actionLoader
 
                 Layout.alignment: Qt.AlignTop | Qt.AlignLeft
-                // Layout.fillWidth: true
+                Layout.fillWidth: true
             }
 
             LayoutHorizontalSpacer {}

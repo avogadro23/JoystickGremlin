@@ -31,6 +31,7 @@ from gremlin.base_classes import (
     UserFeedback,
     Value,
 )
+from gremlin.config import Configuration
 from gremlin.error import (
     GremlinError,
     MissingImplementationError,
@@ -1142,3 +1143,33 @@ class MacroData(AbstractActionData):
 
 
 create = MacroData
+
+Configuration().register(
+    "action",
+    "macro",
+    "axis-minimum-change-amount",
+    PropertyType.Float,
+    0.05,
+    "Minimum amount of change required for a joystick axis event to be recorded "
+    "during macro recording.",
+    {
+        "min": 0.0,
+        "max": 1.0
+    },
+    True
+)
+
+Configuration().register(
+    "action",
+    "macro",
+    "axis-minimum-time-interval",
+    PropertyType.Float,
+    0.01,
+    "Minimum time in seconds between subsequent axis events of the same input in order "
+    "to record a new macro action.",
+    {
+        "min": 0.0,
+        "max": 100.0
+    },
+    True
+)

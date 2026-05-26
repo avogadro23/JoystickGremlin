@@ -29,6 +29,7 @@ from gremlin import (
     shared_state,
     windows_event_hook,
 )
+from gremlin.config import Configuration
 from gremlin.keyboard import key_from_code
 from gremlin.macro import (
     AbstractAction,
@@ -303,29 +304,25 @@ class MacroRecorder:
     callback's responsability to handle the addition of the new action.
     """
 
-    _AXIS_THRESHOLD = 0.05
-
     def __init__(
         self,
         append_action_callback: Callable[[AbstractAction], None],
     ) -> None:
+        self._append_action_callback = append_action_callback
         self._valid_event_types: list[InputType] = []
         self._record_timings: bool = False
-        self._last_event_time: float = 0.0
-        self._last_axis_values: dict[event_handler.Event, float] = {}
+        self._last_event_time: int = 0
+        self._last_recordings: dict[event_handler.Event, int] = {}
+        self._axis_recordings: dict[event_handler.Event, device_helpers.AxisChangeSignificanceTracker] = {}
         self._is_recording: bool = False
-        self._append_action_callback = append_action_callback
+        self._config = Configuration()
         self._lock = Lock()
 
     @property
     def is_recording(self) -> bool:
         return self._is_recording
 
-    def start(
-        self,
-        events_to_record: list[InputType],
-        record_timings: bool
-    ) -> None:
+    def start(self, events_to_record: list[InputType], record_timings: bool) -> None:
         if self._is_recording:
             logging.getLogger("system").warning(
                 "MacroRecorder.start() called while already recording"
@@ -337,8 +334,8 @@ class MacroRecorder:
         self._record_timings = record_timings
 
         # Reset internal state.
-        self._last_event_time = 0.0
-        self._last_axis_values = {}
+        self._last_recordings = {}
+        self._axis_recordings = {}
         self._is_recording = True
         shared_state.set_suspend_input_highlighting(True)
 
@@ -377,10 +374,19 @@ class MacroRecorder:
         if not self._is_recording or event.event_type not in self._valid_event_types:
             return
 
+        # Check if the event corressponds to an axis that has a significant
+        # enough change to record it again.
         if event.event_type == InputType.JoystickAxis:
-            if abs(event.value - self._last_axis_values.get(event, 1e6)) <= self._AXIS_THRESHOLD:
-                return
-            self._last_axis_values[event] = event.value
+            if event in self._axis_recordings:
+                if not self._axis_recordings[event].is_significant_change(event.value):
+                    return
+            else:
+                self._axis_recordings[event] = device_helpers.AxisChangeSignificanceTracker(
+                    event.value,
+                    self._config.value("action", "macro", "axis-minimum-change-amount"),
+                    self._config.value("action", "macro", "axis-minimum-time-interval"),
+                    True
+                )
 
         match event.event_type:
             case InputType.Keyboard:
@@ -405,10 +411,12 @@ class MacroRecorder:
                 return
 
         with self._lock:
-            now = time.monotonic()
-            if self._record_timings and self._last_event_time > 0.0:
-                self._append_action_callback(PauseAction(now - self._last_event_time))
-            self._last_event_time = now
+            time_now = time.monotonic_ns()
+            if self._record_timings and self._last_event_time > 0:
+                self._append_action_callback(
+                    PauseAction((time_now - self._last_event_time) / 1e9)
+                )
+            self._last_event_time = time_now
             self._append_action_callback(action)
 
 

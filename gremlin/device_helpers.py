@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 import logging
+import math
 import time
 from typing import Tuple
 import uuid
@@ -364,3 +365,40 @@ class JoystickInputSignificant(metaclass=common.SingletonMetaclass):
             True if it should be processed, False otherwise
         """
         return event.value != HatDirection.Center
+
+
+class AxisChangeSignificanceTracker:
+
+    def __init__(
+        self,
+        initial_value: float,
+        minimum_change: float,
+        minimum_time_interval: float,
+        record_crossings: bool
+    ) -> None:
+        self._last_time = time.monotonic_ns()
+        self._last_value = initial_value
+        self._minimum_change = minimum_change
+        self._minimum_time_interval = minimum_time_interval * 1e9
+        self._record_crossings = record_crossings
+
+    def is_significant_change(self, new_value: float) -> bool:
+        time_now = time.monotonic_ns()
+        # Precompute values used to determine if a significant change is present.
+        time_delta = time_now - self._last_time
+        value_delta = abs(new_value - self._last_value)
+        zero_crossed = (new_value > 0) != (self._last_value > 0)
+        extrema_reached = (abs(self._last_value) != 1.0 and abs(new_value) == 1.0)
+
+        if self._record_crossings and (zero_crossed or extrema_reached):
+            self._last_time = time_now
+            self._last_value = new_value
+            return True
+
+        if time_delta >= self._minimum_time_interval and \
+                value_delta >= self._minimum_change:
+            self._last_time = time_now
+            self._last_value = new_value
+            return True
+
+        return False
