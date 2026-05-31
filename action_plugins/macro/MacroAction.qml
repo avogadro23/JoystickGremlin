@@ -13,7 +13,6 @@ import Gremlin.Profile
 import Gremlin.Style
 import "../../qml"
 import "../../qml/helpers.js" as Helpers
-import "../../qml/compact" as Compact
 
 
 Item {
@@ -242,7 +241,7 @@ Item {
                     LayoutHorizontalSpacer {}
 
                     // Show different components based on input
-                    Compact.ButtonStateSelector {
+                    ButtonStateSelector {
                         visible: modelData.inputType === "button"
 
                         isPressed: modelData.isPressed
@@ -311,7 +310,7 @@ Item {
                         eventTypes: ["key"]
                     }
 
-                    Compact.ButtonStateSelector {
+                    ButtonStateSelector {
                         isPressed: modelData.isPressed
                         onStateModified: (isPressed) => {
                             modelData.isPressed = isPressed
