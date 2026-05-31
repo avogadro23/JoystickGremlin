@@ -10,6 +10,8 @@ JoystickGremlin is a Python application (PySide6/QML) for configuring joystick d
 
 ## Build, Lint, and Test Commands
 
+The project is using poetry for dependency management. Thus all calls to python HAVE TO USE poetry.
+
 ### Running Tests
 
 ```powershell

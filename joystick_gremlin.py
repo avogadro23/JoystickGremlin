@@ -409,6 +409,7 @@ class JoystickGremlinApp(QtWidgets.QApplication):
         self.engine = QtQml.QQmlApplicationEngine(parent=self)
         self.engine.addImportPath(".")
         self.engine.addImportPath(str(Path(__file__).parent / "qml2"))
+        self.engine.addImportPath("qml")
 
         QtQml.qmlRegisterSingletonType(
             QtCore.QUrl.fromLocalFile(
