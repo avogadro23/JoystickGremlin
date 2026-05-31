@@ -375,9 +375,9 @@ class JoystickGremlinApp(QtWidgets.QApplication):
         )
 
         # Prevent blurry fonts that Qt seems to like
-        # QtQuick.QQuickWindow.setTextRenderType(
-        #     QtQuick.QQuickWindow.NativeTextRendering
-        # )
+        QtQuick.QQuickWindow.setTextRenderType(
+            QtQuick.QQuickWindow.NativeTextRendering
+        )
         # Use software rendering to prevent flickering on variable refresh rate
         # displays.
         # QtQuick.QQuickWindow.setSceneGraphBackend("software")
