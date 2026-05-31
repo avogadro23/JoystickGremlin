@@ -342,14 +342,14 @@ class MacroRecorder:
         # Hookup required event listeners.
         el = event_handler.EventListener()
         if InputType.Keyboard in self._valid_event_types:
-            el.keyboard_event.connect(self._on_event)
+            el.keyboard_event.connect(self._queue_event_recording)
         if InputType.Mouse in self._valid_event_types:
             windows_event_hook.MouseHook().start()
-            el.mouse_event.connect(self._on_event)
+            el.mouse_event.connect(self._queue_event_recording)
         if any(input_type in self._valid_event_types for input_type in (
             InputType.JoystickButton, InputType.JoystickAxis, InputType.JoystickHat
         )):
-            el.joystick_event.connect(self._on_event)
+            el.joystick_event.connect(self._queue_event_recording)
 
     def stop(self) -> None:
         if not self._is_recording:
@@ -362,7 +362,7 @@ class MacroRecorder:
         el = event_handler.EventListener()
         for event_signal in (el.keyboard_event, el.mouse_event, el.joystick_event):
             try:
-                event_signal.disconnect(self._on_event)
+                event_signal.disconnect(self._queue_event_recording)
             except RuntimeError:
                 pass
         if InputType.Mouse in self._valid_event_types:
@@ -370,7 +370,10 @@ class MacroRecorder:
         shared_state.set_suspend_input_highlighting(False)
         self._is_recording = False
 
-    def _on_event(self, event: event_handler.Event) -> None:
+    def _queue_event_recording(self, event: event_handler.Event) -> None:
+        QtCore.QTimer.singleShot(0, lambda: self._record_event(event))
+
+    def _record_event(self, event: event_handler.Event) -> None:
         if not self._is_recording or event.event_type not in self._valid_event_types:
             return
 
