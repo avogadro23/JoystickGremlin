@@ -3,26 +3,31 @@
 // Modified by Joystick Gremlin Contributors
 
 import QtQuick
-import QtQuick.Controls.impl
 import QtQuick.Templates as T
+import QtQuick.Controls.impl
 import QtQuick.Controls.Universal
 
 T.SpinBox {
     id: control
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
-                            implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
-                             implicitContentHeight + topPadding + bottomPadding)
 
-    padding: 2
-    leftPadding: padding + (control.mirrored ? (up.indicator ? up.indicator.width : 0)
-                                             : (down.indicator ? down.indicator.width : 0))
-    rightPadding: padding + (control.mirrored ? (down.indicator ? down.indicator.width : 0)
-                                              : (up.indicator ? up.indicator.width : 0))
+    // Note: the width of the indicators are calculated into the padding
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
+                            contentItem.implicitWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
+                             implicitContentHeight + topPadding + bottomPadding,
+                             up.implicitIndicatorHeight, down.implicitIndicatorHeight)
+
+    // TextControlThemePadding + 2 (border), halved for compact sizing
+    padding: 6
+    topPadding: padding - 4
+    leftPadding: padding + (control.mirrored ? (up.indicator ? up.indicator.width : 0) : (down.indicator ? down.indicator.width : 0))
+    rightPadding: padding + (control.mirrored ? (down.indicator ? down.indicator.width : 0) : (up.indicator ? up.indicator.width : 0))
+    bottomPadding: padding - 3
 
     font.pixelSize: 14
-    inputMethodHints: Qt.ImhFormattedNumbersOnly
+
+    Universal.theme: activeFocus ? Universal.Light : undefined
 
     validator: IntValidator {
         locale: control.locale.name
@@ -31,66 +36,82 @@ T.SpinBox {
     }
 
     contentItem: TextInput {
-        z: 2
         text: control.displayText
+
         font: control.font
-        color: !control.enabled ? control.Universal.chromeDisabledLowColor
-                                : control.Universal.foreground
+        color: !enabled ? control.Universal.chromeDisabledLowColor :
+                activeFocus ? control.Universal.chromeBlackHighColor : control.Universal.foreground
         selectionColor: control.Universal.accent
         selectedTextColor: control.Universal.chromeWhiteColor
         horizontalAlignment: Qt.AlignHCenter
-        verticalAlignment: Qt.AlignVCenter
+        verticalAlignment: TextInput.AlignVCenter
+
         readOnly: !control.editable
         validator: control.validator
         inputMethodHints: control.inputMethodHints
         clip: width < implicitWidth
     }
 
-    up.indicator: Rectangle {
-        x: control.mirrored ? 0 : parent.width - width
-        height: parent.height
-        implicitWidth: 24
-        implicitHeight: 24
-        color: control.up.pressed ? control.Universal.baseMediumLowColor
-             : control.up.hovered ? control.Universal.baseLowColor
-             : "transparent"
+    up.indicator: Item {
+        implicitWidth: 28
+        height: control.height + 4
+        y: -2
+        x: control.mirrored ? 0 : control.width - width
 
-        Text {
-            text: "+"
-            font.pixelSize: 14
-            color: !control.up.enabled ? control.Universal.chromeDisabledLowColor
-                                       : control.Universal.baseHighColor
-            anchors.centerIn: parent
+        Rectangle {
+            x: 2; y: 4
+            width: parent.width - 4
+            height: parent.height - 8
+            color: control.activeFocus ? control.Universal.accent :
+                   control.up.pressed ? control.Universal.baseMediumLowColor :
+                   control.up.hovered ? control.Universal.baseLowColor : "transparent"
+            visible: control.up.pressed || control.up.hovered
+            opacity: control.activeFocus && !control.up.pressed ? 0.4 : 1.0
+        }
+
+        ColorImage {
+            x: (parent.width - width) / 2
+            y: (parent.height - height) / 2
+            color: !enabled ? control.Universal.chromeDisabledLowColor :
+                              control.activeFocus ? control.Universal.chromeBlackHighColor : control.Universal.baseHighColor
+            source: "qrc:/qt-project.org/imports/QtQuick/Controls/Universal/images/" + (control.mirrored ? "left" : "right") + "arrow.png"
         }
     }
 
-    down.indicator: Rectangle {
-        x: control.mirrored ? parent.width - width : 0
-        height: parent.height
-        implicitWidth: 24
-        implicitHeight: 24
-        color: control.down.pressed ? control.Universal.baseMediumLowColor
-             : control.down.hovered ? control.Universal.baseLowColor
-             : "transparent"
+    down.indicator: Item {
+        implicitWidth: 28
+        height: control.height + 4
+        y: -2
+        x: control.mirrored ? control.width - width : 0
 
-        Text {
-            text: "−"
-            font.pixelSize: 14
-            color: !control.down.enabled ? control.Universal.chromeDisabledLowColor
-                                         : control.Universal.baseHighColor
-            anchors.centerIn: parent
+        Rectangle {
+            x: 2; y: 4
+            width: parent.width - 4
+            height: parent.height - 8
+            color: control.activeFocus ? control.Universal.accent :
+                   control.down.pressed ? control.Universal.baseMediumLowColor :
+                   control.down.hovered ? control.Universal.baseLowColor : "transparent"
+            visible: control.down.pressed || control.down.hovered
+            opacity: control.activeFocus && !control.down.pressed ? 0.4 : 1.0
+        }
+
+        ColorImage {
+            x: (parent.width - width) / 2
+            y: (parent.height - height) / 2
+            color: !enabled ? control.Universal.chromeDisabledLowColor :
+                              control.activeFocus ? control.Universal.chromeBlackHighColor : control.Universal.baseHighColor
+            source: "qrc:/qt-project.org/imports/QtQuick/Controls/Universal/images/" + (control.mirrored ? "right" : "left") + "arrow.png"
         }
     }
 
     background: Rectangle {
-        implicitWidth: 120
-        implicitHeight: 24
-        border.color: !control.enabled ? control.Universal.baseLowColor
-                    : control.activeFocus ? control.Universal.accent
-                    : control.Universal.baseMediumLowColor
-        border.width: control.activeFocus ? 2 : 1
-        color: !control.enabled ? control.Universal.baseLowColor
-             : control.editable ? control.Universal.background
-             : control.Universal.altMediumLowColor
+        implicitWidth: 60 + 28 // TextControlThemeMinWidth - 4 (border)
+        implicitHeight: 24 // compact: reduced from 28
+
+        border.width: 2 // TextControlBorderThemeThickness
+        border.color: !control.enabled ? control.Universal.baseLowColor :
+                       control.activeFocus ? control.Universal.accent :
+                       control.hovered ? control.Universal.baseMediumColor : control.Universal.chromeDisabledLowColor
+        color: control.enabled ? control.Universal.background : control.Universal.baseLowColor
     }
 }

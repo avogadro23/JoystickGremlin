@@ -12,7 +12,7 @@ import Gremlin.ActionPlugins
 import Gremlin.Profile
 import Gremlin.Style
 import "../../qml"
-import Compact as Compact
+import Gremlin.Compact as Compact
 import "../../qml/helpers.js" as Helpers
 
 
