@@ -12,6 +12,7 @@ import Gremlin.ActionPlugins
 import Gremlin.Profile
 import Gremlin.Style
 import "../../qml"
+import Compact as Compact
 import "../../qml/helpers.js" as Helpers
 
 
@@ -55,7 +56,7 @@ Item {
                 ]
             }
 
-            FloatSpinBox {
+            Compact.FloatSpinBox {
                 visible: ["count", "toggle", "hold"].includes(_repeatMode.currentValue)
 
                 value: _root.action.repeatDelay
@@ -241,7 +242,7 @@ Item {
                     LayoutHorizontalSpacer {}
 
                     // Show different components based on input
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         visible: modelData.inputType === "button"
 
                         isPressed: modelData.isPressed
@@ -249,7 +250,7 @@ Item {
                             modelData.isPressed = isPressed
                         }
                     }
-                    FloatSpinBox {
+                    Compact.FloatSpinBox {
                         visible: modelData.inputType === "axis"
 
                         minValue: -1.0
@@ -260,7 +261,7 @@ Item {
                             modelData.axisValue = newValue
                         }
                     }
-                    ComboBox {
+                    Compact.ComboBox {
                         visible: modelData.inputType === "hat"
 
                         textRole: "text"
@@ -310,7 +311,7 @@ Item {
                         eventTypes: ["key"]
                     }
 
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         isPressed: modelData.isPressed
                         onStateModified: (isPressed) => {
                             modelData.isPressed = isPressed
@@ -343,7 +344,7 @@ Item {
                     LayoutHorizontalSpacer {}
 
                     // Show different components based on input
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         visible: modelData.inputType === "button"
 
                         isPressed: modelData.isPressed
@@ -354,7 +355,7 @@ Item {
                     RowLayout {
                         visible: modelData.inputType === "axis"
 
-                        FloatSpinBox {
+                        Compact.FloatSpinBox {
                             minValue: -1.0
                             maxValue: 1.0
                             value: modelData.axisValue
@@ -432,7 +433,7 @@ Item {
 
                     LayoutHorizontalSpacer {}
 
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         isPressed: modelData.isPressed
                         onStateModified: (isPressed) => {
                             modelData.isPressed = isPressed
@@ -487,7 +488,7 @@ Item {
                 label: "Pause"
 
                 actionItem: RowLayout {
-                    FloatSpinBox {
+                    Compact.FloatSpinBox {
                         minValue: 0.0
                         maxValue: 10.0
                         value: modelData.duration
@@ -536,7 +537,7 @@ Item {
                     LayoutHorizontalSpacer {}
 
                     // Show different components based on input.
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         visible: modelData.inputType === "button"
 
                         isPressed: modelData.isPressed
@@ -547,7 +548,7 @@ Item {
                     ColumnLayout {
                         visible: modelData.inputType === "axis"
 
-                        FloatSpinBox {
+                        Compact.FloatSpinBox {
                             minValue: -1.0
                             maxValue: 1.0
                             value: modelData.axisValue
