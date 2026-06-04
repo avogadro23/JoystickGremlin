@@ -5,4 +5,7 @@ CheckBox CheckBox.qml
 ComboBox ComboBox.qml
 FloatSpinBox FloatSpinBox.qml
 ItemDelegate ItemDelegate.qml
+Label Label.qml
+RecordButton RecordButton.qml
+RoundButton RoundButton.qml
 SpinBox SpinBox.qml
