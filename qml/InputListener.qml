@@ -8,6 +8,7 @@ import QtQuick.Layouts
 import QtQml.StateMachine as DSM
 
 import Gremlin.Util
+import Gremlin.Compact as Compact
 
 
 Item {
@@ -15,12 +16,11 @@ Item {
 
     property alias eventTypes: _listener.eventTypes
     property alias multipleInputs: _listener.multipleInputs
-    property alias buttonLabel: _button.text
-    property alias buttonWidth: _button.width
+    property alias buttonLabel: _name.text
+    property bool useCompact: false
     property var callback
 
     implicitHeight: _button.height
-    implicitWidth: _button.width
 
     // Underlying input listener model
     InputListenerModel {
@@ -72,28 +72,60 @@ Item {
         }
     }
 
-    Button {
-        width: Math.max(implicitWidth, 150)
-
+    RowLayout {
         id: _button
-        text: "Record Inputs"
 
-        onClicked: () => { _popup.open() }
+        anchors.left: parent.left
+        anchors.right: parent.right
 
-        ToolTip {
-            text: _button.text
-            // Set an upper width of the tooltip to force word wrap on
-            // long description texts.
-            width: contentWidth > 500 ? 500 : contentWidth + 20
-            visible: _hoverHandler.hovered
-            delay: 500
+        Label {
+            id: _name
+
+            Layout.fillWidth: true
+            text: "Record Inputs"
+
+            ToolTip {
+                text: _name.text
+                // Set an upper width of the tooltip to force word wrap on
+                // long description texts.
+                width: contentWidth > 500 ? 500 : contentWidth + 20
+                visible: _hoverHandler.hovered
+                delay: 500
+            }
+
+            HoverHandler {
+                id: _hoverHandler
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            }
         }
-
-        HoverHandler {
-            id: _hoverHandler
-            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        Compact.RecordButton {
+            Layout.alignment: Qt.AlignRight
+            onClicked: () => { _popup.open() }
         }
     }
+
+    // Button {
+    //     width: Math.max(implicitWidth, 150)
+
+    //     id: _button
+    //     text: "Record Inputs"
+
+    //     onClicked: () => { _popup.open() }
+
+    //     ToolTip {
+    //         text: _button.text
+    //         // Set an upper width of the tooltip to force word wrap on
+    //         // long description texts.
+    //         width: contentWidth > 500 ? 500 : contentWidth + 20
+    //         visible: _hoverHandler.hovered
+    //         delay: 500
+    //     }
+
+    //     HoverHandler {
+    //         id: _hoverHandler
+    //         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+    //     }
+    // }
 
     Popup {
         id: _popup

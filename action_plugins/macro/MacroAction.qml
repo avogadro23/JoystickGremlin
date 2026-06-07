@@ -12,6 +12,7 @@ import Gremlin.ActionPlugins
 import Gremlin.Profile
 import Gremlin.Style
 import "../../qml"
+import Gremlin.Base as Base
 import Gremlin.Compact as Compact
 import "../../qml/helpers.js" as Helpers
 
@@ -104,7 +105,7 @@ Item {
                 id: _actionList
 
                 width: parent.width
-                spacing: 5
+                spacing: 2
                 scrollbarAlwaysVisible: true
 
                 model: _root.action.actions
@@ -199,9 +200,9 @@ Item {
 
             LayoutHorizontalSpacer {}
 
-            Button {
+            Compact.RecordButton {
                 visible: !_root.action.isRecording
-                text: "Record"
+                // text: "Record"
                 onClicked: () => { _root.action.startRecording() }
             }
             Button {
@@ -229,6 +230,8 @@ Item {
 
                 actionItem: RowLayout {
                     InputListener {
+                        Layout.fillWidth: true
+
                         buttonLabel: Helpers.safeText(
                             modelData.label, "Record Input"
                         )
@@ -303,6 +306,8 @@ Item {
 
                 actionItem: RowLayout {
                     InputListener {
+                        Layout.fillWidth: true
+
                         buttonLabel: Helpers.safeText(
                             modelData.key, "Record Input"
                         )
@@ -423,6 +428,8 @@ Item {
 
                 actionItem: RowLayout {
                     InputListener {
+                        Layout.fillWidth: true
+
                         buttonLabel: Helpers.safeText(
                             modelData.button, "Record Input"
                         )

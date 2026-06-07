@@ -127,7 +127,6 @@ JGListView {
                     Layout.alignment: Qt.AlignRight
 
                     buttonLabel: modelData.label
-                    buttonWidth: width
                     callback: (inputs) => { modelData.updateKeyboard(inputs) }
                     multipleInputs: false
                     eventTypes: ["key"]
@@ -286,7 +285,6 @@ JGListView {
                     Layout.alignment: Qt.AlignRight
 
                     buttonLabel: modelData.label
-                    buttonWidth: width
                     callback: (inputs) => { modelData.updateJoystick(inputs) }
                     multipleInputs: false
                     eventTypes: modelData.validTypes

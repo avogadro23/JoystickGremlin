@@ -11,6 +11,7 @@ import Gremlin.Profile
 import Gremlin.UI
 import Gremlin.ActionPlugins
 import "../../qml"
+import Gremlin.Compact as Compact
 
 Item {
     id: _root
@@ -141,9 +142,7 @@ Item {
             Label {
                 text: _root.action.firstAxis.label
             }
-            IconButton {
-                text: bsi.icons.replace
-
+            Compact.RecordButton {
                 onClicked: () => { _root.action.firstAxis = uiState.currentInput }
             }
 
@@ -161,9 +160,7 @@ Item {
             Label {
                 text: _root.action.secondAxis.label
             }
-            IconButton {
-                text: bsi.icons.replace
-
+            Compact.RecordButton {
                 onClicked: () => {
                     _root.action.secondAxis = uiState.currentInput
                 }
