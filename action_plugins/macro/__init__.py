@@ -825,11 +825,11 @@ class MacroModel(ActionModel):
         self._recorder = MacroRecorder(self._action_list_model.append)
 
         self._events_to_record: list[InputType] = [
-            InputType.JoystickAxis,
-            InputType.JoystickButton,
-            InputType.JoystickHat,
+            InputType.to_enum(s)
+            for s in Configuration().value("action", "macro", "record-event-types")
         ]
-        self._record_timings: bool = False
+        self._record_timings: bool = Configuration().value(
+            "action", "macro", "record-timings")
 
     def _qml_path_impl(self) -> str:
         return "file:///" + QtCore.QFile(
@@ -896,6 +896,10 @@ class MacroModel(ActionModel):
                     event_type for event_type in self._events_to_record
                     if event_type not in types
                 ]
+            Configuration().set(
+                "action", "macro", "record-event-types",
+                [InputType.to_string(t) for t in self._events_to_record]
+            )
             self.recordingChanged.emit()
 
     def _get_record_timings(self) -> bool:
@@ -904,6 +908,7 @@ class MacroModel(ActionModel):
     def _set_record_timings(self, value: bool) -> None:
         if value != self._record_timings:
             self._record_timings = value
+            Configuration().set("action", "macro", "record-timings", value)
             self.recordingChanged.emit()
 
     def _get_repeat_count(self) -> int:
@@ -1172,4 +1177,26 @@ Configuration().register(
         "max": 100.0
     },
     True
+)
+
+Configuration().register(
+    "action",
+    "macro",
+    "record-event-types",
+    PropertyType.List,
+    ["axis", "button", "hat"],
+    "Input event types recorded during macro recording.",
+    {},
+    False
+)
+
+Configuration().register(
+    "action",
+    "macro",
+    "record-timings",
+    PropertyType.Bool,
+    False,
+    "Whether to record timing pauses between inputs during macro recording.",
+    {},
+    False
 )
