@@ -8,8 +8,9 @@ import QtQuick.Window
 
 import QtQuick.Controls.Universal
 
-import Gremlin.Profile
 import Gremlin.ActionPlugins
+import Gremlin.Base
+import Gremlin.Profile
 import "../../qml"
 
 
@@ -38,7 +39,7 @@ Item {
                 text: "<B>Mode</B>"
             }
 
-            // Radio buttons to select the desired mapping mode
+            // Radio buttons to select the desired mapping mode.
             RadioButton {
                 id: _mode_button
 
@@ -61,7 +62,7 @@ Item {
             }
         }
 
-        // Button configuration
+        // Button configuration.
         RowLayout {
             visible: _mode_button.checked
 
@@ -74,12 +75,12 @@ Item {
                 multipleInputs: false
                 eventTypes: ["mouse"]
 
-                buttonLabel: _root.action.button
+                text: _root.action.button
             }
 
         }
 
-        // Motion configuration for button-like inputs
+        // Motion configuration for button-like inputs.
         GridLayout {
             visible: _mode_motion.checked && inputBinding.behavior === "button"
 
@@ -164,7 +165,7 @@ Item {
             }
         }
 
-        // Motion configuration for axis inputs
+        // Motion configuration for axis inputs.
         ColumnLayout {
             visible: _mode_motion.checked && inputBinding.behavior === "axis"
 
@@ -229,7 +230,7 @@ Item {
             }
         }
 
-        // Motion configuration for hat inputs
+        // Motion configuration for hat inputs.
         GridLayout {
             visible: _mode_motion.checked && inputBinding.behavior === "hat"
 

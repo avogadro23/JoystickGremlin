@@ -35,11 +35,13 @@ Item {
             }
 
             InputListener {
+                Layout.fillWidth: true
+
                 callback: (inputs) => { _root.action.updateInputs(inputs) }
                 multipleInputs: true
                 eventTypes: ["key"]
 
-                buttonLabel: Helpers.safeText(
+                text: Helpers.safeText(
                     _root.action.keyCombination,
                     "Record Keys"
                 )

@@ -8,11 +8,8 @@ import QtQuick.Controls
 Item {
     id: _root
 
-    // Callers assign a Component here — e.g. a compact SpinBox variant
+    // Set the SpinBox component to use with the FloatSpinBox.
     property Component spinboxComponent: _defaultSpinboxComponent
-
-    // Expose the live instance so callers can bind to it if needed
-    readonly property alias spinboxItem: _loader.item
 
     property real minValue: -10.0
     property real maxValue: 10.0
@@ -25,9 +22,9 @@ Item {
 
     signal valueModified(real value)
 
-    implicitWidth: _loader.implicitWidth
+    implicitWidth: _textMetrics.boundingRect.width + (
+        _loader.item ? _loader.item.leftPadding + _loader.item.rightPadding : 0)
     implicitHeight: _loader.implicitHeight
-
 
     function toFloat(value) {
         return value / decimalFactor
@@ -44,6 +41,7 @@ Item {
 
     Loader {
         id: _loader
+        anchors.fill: parent
         sourceComponent: _root.spinboxComponent
 
         onLoaded: () => {
@@ -82,8 +80,6 @@ Item {
                     _root.valueModified(_root.value)
                 }
             })
-
-            _textMetrics.font = item.font
         }
     }
 
@@ -95,64 +91,14 @@ Item {
         }
     }
 
-    // Calculate the width needed for the widest possible value.
-    // Component.onCompleted: {
-    //     var testValues = [
-    //         Number(minValue).toFixed(decimals),
-    //         Number(maxValue).toFixed(decimals),
-    //         Number(0).toFixed(decimals)
-    //     ]
-
-    //     for (var i = 0; i < testValues.length; i++) {
-    //         _textMetrics.text = testValues[i]
-    //         _spinbox.width = Math.max(_spinbox.width, _textMetrics.width)
-    //     }
-
-    //     _spinbox.width += 10
-    // }
-
-    // Handle external changes and prevent binding loops.
-    // onValueChanged: () => {
-    //     _internalUpdate = true
-    //     _spinbox.value = toInt(value)
-    //     Qt.callLater(() => { _internalUpdate = false })
-    // }
-
-    // SpinBox {
-    //     id: _spinbox
-
-    //     from: toInt(_root.minValue)
-    //     to: toInt(_root.maxValue)
-    //     stepSize: toInt(_root.stepSize)
-
-    //     editable: true
-
-    //     validator: DoubleValidator {
-    //         bottom: Math.min(_spinbox.from, _spinbox.to)
-    //         top:  Math.max(_spinbox.from, _spinbox.to)
-    //         decimals: _root.decimals
-    //         notation: DoubleValidator.StandardNotation
-    //     }
-
-    //     textFromValue: (value, locale) => {
-    //         return Number(value / decimalFactor)
-    //             .toLocaleString(locale, "f", _root.decimals)
-    //     }
-
-    //     valueFromText: (text, locale) => {
-    //         return Number.fromLocaleString(locale, text) * decimalFactor
-    //     }
-
-    //     onValueChanged: () => {
-    //         if (!_root._internalUpdate) {
-    //             _root.value = toFloat(value)
-    //             _root.valueModified(_root.value)
-    //         }
-    //     }
-    // }
-
     TextMetrics {
         id: _textMetrics
+
+        font: _loader.item ? _loader.item.font : font
+        text: (() => {
+            let low = _root.minValue.toFixed(_root.decimals)
+            let high = _root.maxValue.toFixed(_root.decimals)
+            return low.length > high.length ? low : high
+        })()
     }
 }
-

@@ -7,9 +7,11 @@ import QtQuick.Dialogs
 import QtQuick.Layouts
 import Qt.labs.qmlmodels
 
+import Gremlin.Base
 import Gremlin.Profile
 import Gremlin.Script
 import Gremlin.Style
+
 
 JGListView {
     model: []
@@ -126,7 +128,7 @@ JGListView {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignRight
 
-                    buttonLabel: modelData.label
+                    text: modelData.label
                     callback: (inputs) => { modelData.updateKeyboard(inputs) }
                     multipleInputs: false
                     eventTypes: ["key"]
@@ -284,7 +286,7 @@ JGListView {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignRight
 
-                    buttonLabel: modelData.label
+                    text: modelData.label
                     callback: (inputs) => { modelData.updateJoystick(inputs) }
                     multipleInputs: false
                     eventTypes: modelData.validTypes

@@ -7,6 +7,7 @@ import QtQuick.Dialogs
 import QtQuick.Layouts
 import Qt.labs.qmlmodels
 
+import Gremlin.Base
 import Gremlin.Profile
 import Gremlin.Style
 import "helpers.js" as Helpers

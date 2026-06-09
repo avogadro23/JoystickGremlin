@@ -108,7 +108,7 @@ T.SpinBox {
         implicitWidth: 60 + 28 // TextControlThemeMinWidth - 4 (border)
         implicitHeight: 24 // compact: reduced from 28
 
-        border.width: 2 // TextControlBorderThemeThickness
+        border.width: 1 // TextControlBorderThemeThickness
         border.color: !control.enabled ? control.Universal.baseLowColor :
                        control.activeFocus ? control.Universal.accent :
                        control.hovered ? control.Universal.baseMediumColor : control.Universal.chromeDisabledLowColor
