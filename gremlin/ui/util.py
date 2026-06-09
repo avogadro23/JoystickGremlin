@@ -9,7 +9,6 @@ import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
-from threading import Lock
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -316,7 +315,6 @@ class MacroRecorder:
         self._axis_recordings: dict[event_handler.Event, device_helpers.AxisChangeSignificanceTracker] = {}
         self._is_recording: bool = False
         self._config = Configuration()
-        self._lock = Lock()
 
     @property
     def is_recording(self) -> bool:
@@ -413,14 +411,13 @@ class MacroRecorder:
             case _:
                 return
 
-        with self._lock:
-            time_now = time.monotonic_ns()
-            if self._record_timings and self._last_event_time > 0:
-                self._append_action_callback(
-                    PauseAction((time_now - self._last_event_time) / 1e9)
-                )
-            self._last_event_time = time_now
-            self._append_action_callback(action)
+        time_now = time.monotonic_ns()
+        if self._record_timings and self._last_event_time > 0:
+            self._append_action_callback(
+                PauseAction((time_now - self._last_event_time) / 1e9)
+            )
+        self._last_event_time = time_now
+        self._append_action_callback(action)
 
 
 @QtQml.QmlElement

@@ -729,8 +729,8 @@ class ActionListModel(QtCore.QAbstractListModel):
         self.beginInsertRows(QtCore.QModelIndex(), row, row)
         self._actions.append(action)
         self._wrappers.append(self._create_action_model(action))
-        self.actionAdded.emit()
         self.endInsertRows()
+        self.actionAdded.emit()
 
     def remove(self, index: int) -> None:
         """Removes the action at the specified index.
@@ -752,30 +752,22 @@ class ActionListModel(QtCore.QAbstractListModel):
             source_index: The index of the item to move.
             destination_index: The index to move the item to.
         """
-        item_count = len(self._actions)
-        if not (0 <= source_index < item_count) or source_index == destination_index:
+        if not (0 <= source_index < len(self._actions)):
             return
 
-        # Obtain object in fron of which we wish to insert the source item. If
-        # the source item is to be inserted at the end of the list, the
-        # target will be None.
-        target = self._actions[destination_index] \
-            if destination_index < item_count else None
+        if not self.beginMoveRows(
+            QtCore.QModelIndex(), source_index, source_index,
+            QtCore.QModelIndex(), destination_index
+        ):
+            return
 
-        # Remove the source item and emit required signals.
-        self.beginRemoveRows(QtCore.QModelIndex(), source_index, source_index)
         action = self._actions.pop(source_index)
         wrapper = self._wrappers.pop(source_index)
-        self.endRemoveRows()
-
-        # Insert the source item at the correct index and emit required signals.
-        insertion_index = item_count
-        if target is not None:
-            insertion_index = self._actions.index(target)
-        self.beginInsertRows(QtCore.QModelIndex(), insertion_index, insertion_index)
-        self._actions.insert(insertion_index, action)
-        self._wrappers.insert(insertion_index, wrapper)
-        self.endInsertRows()
+        insert_pos = destination_index - 1 if destination_index > source_index \
+            else destination_index
+        self._actions.insert(insert_pos, action)
+        self._wrappers.insert(insert_pos, wrapper)
+        self.endMoveRows()
 
     def _create_action_model(self, action: macro.AbstractAction) -> AbstractActionModel:
         """Returns the action model corresponding to the given action.
@@ -786,7 +778,7 @@ class ActionListModel(QtCore.QAbstractListModel):
         Returns:
             QML model instance for the given action instance.
         """
-        return MacroModel.model_lookup[action.tag](action, None)
+        return MacroModel.model_lookup[action.tag](action, self)
 
 
 class MacroModel(ActionModel):
