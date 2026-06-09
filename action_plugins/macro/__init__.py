@@ -680,6 +680,8 @@ class ActionListModel(QtCore.QAbstractListModel):
     Keeps the action data and action representation in sync.
     """
 
+    actionAdded = QtCore.Signal()
+
     roles = {
         QtCore.Qt.ItemDataRole.UserRole + 1: QtCore.QByteArray(b"modelData"),
         QtCore.Qt.ItemDataRole.UserRole + 2: QtCore.QByteArray(b"actionType"),
@@ -727,6 +729,7 @@ class ActionListModel(QtCore.QAbstractListModel):
         self.beginInsertRows(QtCore.QModelIndex(), row, row)
         self._actions.append(action)
         self._wrappers.append(self._create_action_model(action))
+        self.actionAdded.emit()
         self.endInsertRows()
 
     def remove(self, index: int) -> None:

@@ -9,11 +9,11 @@ import QtQuick.Window
 import Qt.labs.qmlmodels
 
 import Gremlin.ActionPlugins
+import Gremlin.Base
+import Gremlin.Compact as Compact
 import Gremlin.Profile
 import Gremlin.Style
 import "../../qml"
-import Gremlin.Base as Base
-import Gremlin.Compact as Compact
 import "../../qml/helpers.js" as Helpers
 
 
@@ -30,10 +30,13 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
 
+        // Macro repeat configuration settings.
         RowLayout {
             Layout.fillWidth: true
 
             Label {
+                Layout.preferredWidth: 125
+
                 text: "<b>Repeat Mode</b>"
             }
 
@@ -57,7 +60,7 @@ Item {
                 ]
             }
 
-            Compact.FloatSpinBox {
+            FloatSpinBox {
                 visible: ["count", "toggle", "hold"].includes(_repeatMode.currentValue)
 
                 value: _root.action.repeatDelay
@@ -89,6 +92,69 @@ Item {
             }
         }
 
+        // Action recording configuration settings.
+        RowLayout {
+            Layout.fillWidth: true
+
+            Label {
+                Layout.preferredWidth: 125
+
+                text: "<b>Record Inputs</b>"
+            }
+
+            CheckBox {
+                text: "Keyboard"
+                checked: _root.action.recordKeyboard
+                onToggled: () => { _root.action.recordKeyboard = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Mouse"
+                checked: _root.action.recordMouse
+                onToggled: () => { _root.action.recordMouse = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Axis"
+                checked: _root.action.recordJoystickAxis
+                onToggled: () => { _root.action.recordJoystickAxis = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Button"
+                checked: _root.action.recordJoystickButton
+                onToggled: () => { _root.action.recordJoystickButton = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Hat"
+                checked: _root.action.recordJoystickHat
+                onToggled: () => { _root.action.recordJoystickHat = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Timings"
+                checked: _root.action.recordTimings
+                onToggled: () => { _root.action.recordTimings = checked }
+                enabled: !_root.action.isRecording
+            }
+
+            LayoutHorizontalSpacer {}
+
+            Compact.RecordButton {
+                visible: !_root.action.isRecording
+                description: "Start Recording"
+                onClicked: () => { _root.action.startRecording() }
+            }
+            Compact.RecordButton {
+                visible: _root.action.isRecording
+                highlighted: true
+                description: "Stop Recording"
+                onPressed: () => { _root.action.stopRecording() }
+            }
+        }
+
+
         ActionDrop {
             targetIndex: 0
             insertionMode: "prepend"
@@ -111,10 +177,14 @@ Item {
                 model: _root.action.actions
                 delegate: _delegateChooser
 
-                onCountChanged: () => {
-                    // Update model with a delay to ensure the list view scrolls
-                    // properly to the bottom.
-                    Qt.callLater(positionViewAtEnd)
+                Connections {
+                    target: _actionList.model
+
+                    function onActionAdded() {
+                        // Reposition the view at the bottom of the list when
+                        // an action is added but not when deleted.
+                        Qt.callLater(_actionList.positionViewAtEnd)
+                    }
                 }
             }
         }
@@ -152,66 +222,6 @@ Item {
 
             LayoutHorizontalSpacer {}
         }
-
-        // Action recording configuration controls.
-        RowLayout {
-            Layout.fillWidth: true
-
-            CheckBox {
-                text: "Keyboard"
-                checked: _root.action.recordKeyboard
-                onToggled: () => { _root.action.recordKeyboard = checked }
-                enabled: !_root.action.isRecording
-            }
-            CheckBox {
-                text: "Mouse"
-                checked: _root.action.recordMouse
-                onToggled: () => { _root.action.recordMouse = checked }
-                enabled: !_root.action.isRecording
-            }
-            Label {
-                text: "Joystick"
-                Layout.leftMargin: 10
-            }
-            CheckBox {
-                text: "Axis"
-                checked: _root.action.recordJoystickAxis
-                onToggled: () => { _root.action.recordJoystickAxis = checked }
-                enabled: !_root.action.isRecording
-            }
-            CheckBox {
-                text: "Button"
-                checked: _root.action.recordJoystickButton
-                onToggled: () => { _root.action.recordJoystickButton = checked }
-                enabled: !_root.action.isRecording
-            }
-            CheckBox {
-                text: "Hat"
-                checked: _root.action.recordJoystickHat
-                onToggled: () => { _root.action.recordJoystickHat = checked }
-                enabled: !_root.action.isRecording
-            }
-            CheckBox {
-                text: "Timings"
-                checked: _root.action.recordTimings
-                onToggled: () => { _root.action.recordTimings = checked }
-                enabled: !_root.action.isRecording
-            }
-
-            LayoutHorizontalSpacer {}
-
-            Compact.RecordButton {
-                visible: !_root.action.isRecording
-                // text: "Record"
-                onClicked: () => { _root.action.startRecording() }
-            }
-            Button {
-                visible: _root.action.isRecording
-                highlighted: true
-                text: "Stop"
-                onPressed: () => { _root.action.stopRecording() }
-            }
-        }
     }
 
     // Renders the correct delegate based on the action type
@@ -220,7 +230,7 @@ Item {
 
         role: "actionType"
 
-        // Joystick action
+        // Joystick action.
         DelegateChoice {
             roleValue: "joystick"
 
@@ -232,7 +242,7 @@ Item {
                     InputListener {
                         Layout.fillWidth: true
 
-                        buttonLabel: Helpers.safeText(
+                        text: Helpers.safeText(
                             modelData.label, "Record Input"
                         )
                         callback: (inputs) => {
@@ -241,8 +251,6 @@ Item {
                         multipleInputs: false
                         eventTypes: ["axis", "button", "hat"]
                     }
-
-                    LayoutHorizontalSpacer {}
 
                     // Show different components based on input
                     Compact.ButtonStateSelector {
@@ -258,6 +266,7 @@ Item {
 
                         minValue: -1.0
                         maxValue: 1.0
+                        decimals: Style.decimalsPrecise
                         value: modelData.axisValue
 
                         onValueModified: (newValue) => {
@@ -296,7 +305,7 @@ Item {
             }
         }
 
-        // Key action
+        // Key action.
         DelegateChoice {
             roleValue: "key"
 
@@ -308,7 +317,7 @@ Item {
                     InputListener {
                         Layout.fillWidth: true
 
-                        buttonLabel: Helpers.safeText(
+                        text: Helpers.safeText(
                             modelData.key, "Record Input"
                         )
                         callback: (inputs) => { modelData.updateKey(inputs) }
@@ -326,7 +335,7 @@ Item {
             }
         }
 
-        // Logical device action
+        // Logical device action.
         DelegateChoice {
             roleValue: "logical-device"
 
@@ -417,8 +426,7 @@ Item {
             }
         }
 
-
-        // Mouse button
+        // Mouse button.
         DelegateChoice {
             roleValue: "mouse-button"
 
@@ -430,7 +438,7 @@ Item {
                     InputListener {
                         Layout.fillWidth: true
 
-                        buttonLabel: Helpers.safeText(
+                        text: Helpers.safeText(
                             modelData.button, "Record Input"
                         )
                         callback: (inputs) => { modelData.updateButton(inputs) }
@@ -450,7 +458,7 @@ Item {
             }
         }
 
-        // Mouse motion
+        // Mouse motion.
         DelegateChoice {
             roleValue: "mouse-motion"
 
@@ -486,7 +494,7 @@ Item {
             }
         }
 
-        // Pause action
+        // Pause action.
         DelegateChoice {
             roleValue: "pause"
 
@@ -512,7 +520,7 @@ Item {
             }
         }
 
-        // vJoy action
+        // vJoy action.
         DelegateChoice {
             roleValue: "vjoy"
 
@@ -613,17 +621,16 @@ Item {
         }
     }
 
-
-    // Predefined button that removes a given action
+    // Predefined button that removes a given action.
     component DeleteButton : IconButton {
         text: bsi.icons.remove
-        font.pixelSize: 13
+        font.pixelSize: 14
 
         onClicked: () => { _root.action.removeAction(index) }
     }
 
     // Displays an icon and also acts as the drag handle for the drag&drop
-    // implementation
+    // implementation.
     component Icon : Label {
         property string iconName
         property var target
@@ -642,7 +649,7 @@ Item {
             drag.target: target
             drag.axis: Drag.YAxis
 
-            // Create a visualization of the dragged item
+            // Create a visualization of the dragged item.
             onPressed: () => {
                 parent.parent.grabToImage(function(result) {
                     target.Drag.imageSource = result.url
@@ -693,16 +700,16 @@ Item {
     component DraggableAction : ColumnLayout {
         id: _draggableAction
 
-        // Widget properties
+        // Widget properties.
         property string icon
         property string label
         property alias actionItem: _actionLoader.sourceComponent
 
-        // Ensure entire width is taken up
+        // Ensure entire width is taken up.
         width: ListView.view ? ListView.view.width : 0
-        // spacing: 0
+        spacing: 1
 
-        // Define drag&drop behavior
+        // Define drag&drop behavior.
         Drag.dragType: Drag.Automatic
         Drag.active: _icon.dragActive
         Drag.supportedActions: Qt.MoveAction
@@ -718,7 +725,7 @@ Item {
             }
         }
 
-        // Widget content assembly
+        // Widget content assembly.
         RowLayout {
             id: _actionContent
             spacing: 4
@@ -735,12 +742,13 @@ Item {
 
             Label {
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: 150
+                Layout.preferredWidth: 125
 
                 text: label
+                font.pixelSize: 16
             }
 
-            // Holds action specific UI elements
+            // Holds action specific UI elements.
             Loader {
                 id: _actionLoader
 
