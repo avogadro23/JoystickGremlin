@@ -64,7 +64,7 @@ Item {
             Layout.margins: 10
             Layout.alignment: Qt.AlignBottom | Qt.AlignHCenter
 
-            buttonLabel: "Add Key"
+            text: "Add Key"
             callback: (inputs) => { _inputList.model.addKey(inputs) }
             multipleInputs: false
             eventTypes: ["key"]

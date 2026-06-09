@@ -16,13 +16,12 @@ Item {
 
     property alias eventTypes: _listener.eventTypes
     property alias multipleInputs: _listener.multipleInputs
-    property alias buttonLabel: _name.text
-    property bool useCompact: false
+    property alias text: _name.text
     property var callback
 
     implicitHeight: _button.height
 
-    // Underlying input listener model
+    // Underlying input listener model.
     InputListenerModel {
         id: _listener
 
@@ -78,6 +77,10 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
 
+        Compact.RecordButton {
+            onClicked: () => { _popup.open() }
+        }
+
         Label {
             id: _name
 
@@ -98,34 +101,7 @@ Item {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             }
         }
-        Compact.RecordButton {
-            Layout.alignment: Qt.AlignRight
-            onClicked: () => { _popup.open() }
-        }
     }
-
-    // Button {
-    //     width: Math.max(implicitWidth, 150)
-
-    //     id: _button
-    //     text: "Record Inputs"
-
-    //     onClicked: () => { _popup.open() }
-
-    //     ToolTip {
-    //         text: _button.text
-    //         // Set an upper width of the tooltip to force word wrap on
-    //         // long description texts.
-    //         width: contentWidth > 500 ? 500 : contentWidth + 20
-    //         visible: _hoverHandler.hovered
-    //         delay: 500
-    //     }
-
-    //     HoverHandler {
-    //         id: _hoverHandler
-    //         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-    //     }
-    // }
 
     Popup {
         id: _popup
