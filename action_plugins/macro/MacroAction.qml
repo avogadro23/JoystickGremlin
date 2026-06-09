@@ -9,6 +9,8 @@ import QtQuick.Window
 import Qt.labs.qmlmodels
 
 import Gremlin.ActionPlugins
+import Gremlin.Base
+import Gremlin.Compact as Compact
 import Gremlin.Profile
 import Gremlin.Style
 import "../../qml"
@@ -28,10 +30,13 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
 
+        // Macro repeat configuration settings.
         RowLayout {
             Layout.fillWidth: true
 
             Label {
+                Layout.preferredWidth: 125
+
                 text: "<b>Repeat Mode</b>"
             }
 
@@ -87,6 +92,69 @@ Item {
             }
         }
 
+        // Action recording configuration settings.
+        RowLayout {
+            Layout.fillWidth: true
+
+            Label {
+                Layout.preferredWidth: 125
+
+                text: "<b>Record Inputs</b>"
+            }
+
+            CheckBox {
+                text: "Keyboard"
+                checked: _root.action.recordKeyboard
+                onToggled: () => { _root.action.recordKeyboard = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Mouse"
+                checked: _root.action.recordMouse
+                onToggled: () => { _root.action.recordMouse = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Axis"
+                checked: _root.action.recordJoystickAxis
+                onToggled: () => { _root.action.recordJoystickAxis = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Button"
+                checked: _root.action.recordJoystickButton
+                onToggled: () => { _root.action.recordJoystickButton = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Hat"
+                checked: _root.action.recordJoystickHat
+                onToggled: () => { _root.action.recordJoystickHat = checked }
+                enabled: !_root.action.isRecording
+            }
+            CheckBox {
+                text: "Timings"
+                checked: _root.action.recordTimings
+                onToggled: () => { _root.action.recordTimings = checked }
+                enabled: !_root.action.isRecording
+            }
+
+            LayoutHorizontalSpacer {}
+
+            Compact.RecordButton {
+                visible: !_root.action.isRecording
+                description: "Start Recording"
+                onClicked: () => { _root.action.startRecording() }
+            }
+            Compact.RecordButton {
+                visible: _root.action.isRecording
+                highlighted: true
+                description: "Stop Recording"
+                onPressed: () => { _root.action.stopRecording() }
+            }
+        }
+
+
         ActionDrop {
             targetIndex: 0
             insertionMode: "prepend"
@@ -94,13 +162,31 @@ Item {
             Layout.bottomMargin: -10
         }
 
-        ListView {
+        ScrollView {
             Layout.fillWidth: true
-            implicitHeight: contentHeight
-            spacing: 5
+            Layout.preferredHeight: Math.min(_actionList.contentHeight, 400)
+            clip: true
 
-            model: _root.action.actions
-            delegate: _delegateChooser
+            JGListView {
+                id: _actionList
+
+                width: parent.width
+                spacing: 2
+                scrollbarAlwaysVisible: true
+
+                model: _root.action.actions
+                delegate: _delegateChooser
+
+                Connections {
+                    target: _actionList.model
+
+                    function onActionAdded() {
+                        // Reposition the view at the bottom of the list when
+                        // an action is added but not when deleted.
+                        Qt.callLater(_actionList.positionViewAtEnd)
+                    }
+                }
+            }
         }
 
         RowLayout {
@@ -144,7 +230,7 @@ Item {
 
         role: "actionType"
 
-        // Joystick action
+        // Joystick action.
         DelegateChoice {
             roleValue: "joystick"
 
@@ -154,7 +240,9 @@ Item {
 
                 actionItem: RowLayout {
                     InputListener {
-                        buttonLabel: Helpers.safeText(
+                        Layout.fillWidth: true
+
+                        text: Helpers.safeText(
                             modelData.label, "Record Input"
                         )
                         callback: (inputs) => {
@@ -164,10 +252,8 @@ Item {
                         eventTypes: ["axis", "button", "hat"]
                     }
 
-                    LayoutHorizontalSpacer {}
-
                     // Show different components based on input
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         visible: modelData.inputType === "button"
 
                         isPressed: modelData.isPressed
@@ -175,18 +261,19 @@ Item {
                             modelData.isPressed = isPressed
                         }
                     }
-                    FloatSpinBox {
+                    Compact.FloatSpinBox {
                         visible: modelData.inputType === "axis"
 
                         minValue: -1.0
                         maxValue: 1.0
+                        decimals: Style.decimalsPrecise
                         value: modelData.axisValue
 
                         onValueModified: (newValue) => {
                             modelData.axisValue = newValue
                         }
                     }
-                    ComboBox {
+                    Compact.ComboBox {
                         visible: modelData.inputType === "hat"
 
                         textRole: "text"
@@ -218,7 +305,7 @@ Item {
             }
         }
 
-        // Key action
+        // Key action.
         DelegateChoice {
             roleValue: "key"
 
@@ -228,7 +315,9 @@ Item {
 
                 actionItem: RowLayout {
                     InputListener {
-                        buttonLabel: Helpers.safeText(
+                        Layout.fillWidth: true
+
+                        text: Helpers.safeText(
                             modelData.key, "Record Input"
                         )
                         callback: (inputs) => { modelData.updateKey(inputs) }
@@ -236,7 +325,7 @@ Item {
                         eventTypes: ["key"]
                     }
 
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         isPressed: modelData.isPressed
                         onStateModified: (isPressed) => {
                             modelData.isPressed = isPressed
@@ -246,7 +335,7 @@ Item {
             }
         }
 
-        // Logical device action
+        // Logical device action.
         DelegateChoice {
             roleValue: "logical-device"
 
@@ -269,7 +358,7 @@ Item {
                     LayoutHorizontalSpacer {}
 
                     // Show different components based on input
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         visible: modelData.inputType === "button"
 
                         isPressed: modelData.isPressed
@@ -280,7 +369,7 @@ Item {
                     RowLayout {
                         visible: modelData.inputType === "axis"
 
-                        FloatSpinBox {
+                        Compact.FloatSpinBox {
                             minValue: -1.0
                             maxValue: 1.0
                             value: modelData.axisValue
@@ -337,8 +426,7 @@ Item {
             }
         }
 
-
-        // Mouse button
+        // Mouse button.
         DelegateChoice {
             roleValue: "mouse-button"
 
@@ -348,7 +436,9 @@ Item {
 
                 actionItem: RowLayout {
                     InputListener {
-                        buttonLabel: Helpers.safeText(
+                        Layout.fillWidth: true
+
+                        text: Helpers.safeText(
                             modelData.button, "Record Input"
                         )
                         callback: (inputs) => { modelData.updateButton(inputs) }
@@ -358,7 +448,7 @@ Item {
 
                     LayoutHorizontalSpacer {}
 
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         isPressed: modelData.isPressed
                         onStateModified: (isPressed) => {
                             modelData.isPressed = isPressed
@@ -368,7 +458,7 @@ Item {
             }
         }
 
-        // Mouse motion
+        // Mouse motion.
         DelegateChoice {
             roleValue: "mouse-motion"
 
@@ -404,7 +494,7 @@ Item {
             }
         }
 
-        // Pause action
+        // Pause action.
         DelegateChoice {
             roleValue: "pause"
 
@@ -413,7 +503,7 @@ Item {
                 label: "Pause"
 
                 actionItem: RowLayout {
-                    FloatSpinBox {
+                    Compact.FloatSpinBox {
                         minValue: 0.0
                         maxValue: 10.0
                         value: modelData.duration
@@ -430,7 +520,7 @@ Item {
             }
         }
 
-        // vJoy action
+        // vJoy action.
         DelegateChoice {
             roleValue: "vjoy"
 
@@ -462,7 +552,7 @@ Item {
                     LayoutHorizontalSpacer {}
 
                     // Show different components based on input.
-                    ButtonStateSelector {
+                    Compact.ButtonStateSelector {
                         visible: modelData.inputType === "button"
 
                         isPressed: modelData.isPressed
@@ -473,7 +563,7 @@ Item {
                     ColumnLayout {
                         visible: modelData.inputType === "axis"
 
-                        FloatSpinBox {
+                        Compact.FloatSpinBox {
                             minValue: -1.0
                             maxValue: 1.0
                             value: modelData.axisValue
@@ -531,17 +621,16 @@ Item {
         }
     }
 
-
-    // Predefined button that removes a given action
+    // Predefined button that removes a given action.
     component DeleteButton : IconButton {
         text: bsi.icons.remove
-        font.pixelSize: 16
+        font.pixelSize: 14
 
         onClicked: () => { _root.action.removeAction(index) }
     }
 
     // Displays an icon and also acts as the drag handle for the drag&drop
-    // implementation
+    // implementation.
     component Icon : Label {
         property string iconName
         property var target
@@ -550,7 +639,7 @@ Item {
 
         text: bsi.icons.drag_handle + iconName
 
-        font.pixelSize: 20
+        font.pixelSize: 14
 
         MouseArea {
             id: _dragArea
@@ -560,7 +649,7 @@ Item {
             drag.target: target
             drag.axis: Drag.YAxis
 
-            // Create a visualization of the dragged item
+            // Create a visualization of the dragged item.
             onPressed: () => {
                 parent.parent.grabToImage(function(result) {
                     target.Drag.imageSource = result.url
@@ -573,7 +662,7 @@ Item {
         property int targetIndex
         property string insertionMode: "append"
 
-        height: 20
+        height: 8
 
         Layout.fillWidth: true
 
@@ -611,17 +700,16 @@ Item {
     component DraggableAction : ColumnLayout {
         id: _draggableAction
 
-        // Widget properties
+        // Widget properties.
         property string icon
         property string label
         property alias actionItem: _actionLoader.sourceComponent
 
-        // Ensure entire width is taken up
-        anchors.left: parent.left
-        anchors.right: parent.right
-        spacing: 0
+        // Ensure entire width is taken up.
+        width: ListView.view ? ListView.view.width : 0
+        spacing: 1
 
-        // Define drag&drop behavior
+        // Define drag&drop behavior.
         Drag.dragType: Drag.Automatic
         Drag.active: _icon.dragActive
         Drag.supportedActions: Qt.MoveAction
@@ -637,14 +725,15 @@ Item {
             }
         }
 
-        // Widget content assembly
+        // Widget content assembly.
         RowLayout {
             id: _actionContent
+            spacing: 4
 
             Icon {
                 id: _icon
 
-                Layout.alignment: Qt.AlignTop
+                Layout.alignment: Qt.AlignVCenter
                 font.family: "bootstrap-icons"
 
                 iconName: icon
@@ -652,28 +741,31 @@ Item {
             }
 
             Label {
-                Layout.alignment: Qt.AlignTop
+                Layout.alignment: Qt.AlignVCenter
                 Layout.preferredWidth: 125
 
                 text: label
+                font.pixelSize: 16
             }
 
-            // Holds action specific UI elements
+            // Holds action specific UI elements.
             Loader {
                 id: _actionLoader
 
                 Layout.alignment: Qt.AlignTop | Qt.AlignLeft
-                // Layout.fillWidth: true
+                Layout.fillWidth: true
             }
 
             LayoutHorizontalSpacer {}
 
-            DeleteButton {}
+            DeleteButton {
+                Layout.rightMargin: 10
+            }
         }
 
         ActionDrop {
-            Layout.bottomMargin: -10
-            Layout.topMargin: -10
+            Layout.bottomMargin: -4
+            Layout.topMargin: -4
 
             targetIndex: index
         }

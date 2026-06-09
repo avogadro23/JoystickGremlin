@@ -13,6 +13,7 @@ import Qt.labs.qmlmodels
 import QtCharts
 
 import Gremlin.ActionPlugins
+import Gremlin.Base
 import Gremlin.Profile
 import Gremlin.Style
 import "../../qml"

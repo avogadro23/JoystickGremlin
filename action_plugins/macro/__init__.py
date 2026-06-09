@@ -5,19 +5,19 @@
 from __future__ import annotations
 
 import enum
-from typing import (
-    override,
-    List,
-    TYPE_CHECKING,
-)
 import uuid
+from typing import (
+    TYPE_CHECKING,
+    List,
+    cast,
+    override,
+)
 from xml.etree import ElementTree
 
 from PySide6 import QtCore
 
-from action_plugins import common
 import dill
-
+from action_plugins import common
 from gremlin import (
     device_helpers,
     event_handler,
@@ -31,6 +31,7 @@ from gremlin.base_classes import (
     UserFeedback,
     Value,
 )
+from gremlin.config import Configuration
 from gremlin.error import (
     GremlinError,
     MissingImplementationError,
@@ -46,16 +47,16 @@ from gremlin.types import (
     MouseButton,
     PropertyType,
 )
-
 from gremlin.ui.action_model import (
     ActionModel,
     SequenceIndex,
 )
 from gremlin.ui.device import InputIdentifier
+from gremlin.ui.util import MacroRecorder
 
 if TYPE_CHECKING:
-    from gremlin.ui.profile import InputItemBindingModel
     import gremlin.ui.type_aliases as ta
+    from gremlin.ui.profile import InputItemBindingModel
 
 
 class AbstractActionModel(QtCore.QObject):
@@ -673,10 +674,118 @@ class MacroFunctor(AbstractFunctor):
                 )
 
 
+class ActionListModel(QtCore.QAbstractListModel):
+    """Model of the list of actions that constitute a macro.
+
+    Keeps the action data and action representation in sync.
+    """
+
+    actionAdded = QtCore.Signal()
+
+    roles = {
+        QtCore.Qt.ItemDataRole.UserRole + 1: QtCore.QByteArray(b"modelData"),
+        QtCore.Qt.ItemDataRole.UserRole + 2: QtCore.QByteArray(b"actionType"),
+    }
+
+    def __init__(
+            self,
+            actions: list[macro.AbstractAction],
+            parent: QtCore.QObject
+    ) -> None:
+        super().__init__(parent)
+        self._actions = actions
+        self._wrappers: list[AbstractActionModel] = [
+            self._create_action_model(action) for action in self._actions
+        ]
+
+    def rowCount(self, parent: ta.MI = QtCore.QModelIndex()) -> int:
+        return len(self._actions)
+
+    def data(
+        self,
+        index: ta.MI,
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+    ) -> AbstractActionModel | str | None:
+        if not index.isValid() or not (0 <= index.row() < len(self._actions)):
+            return None
+        match cast(str, self.roles.get(role, "")):
+            case "modelData":
+                return self._wrappers[index.row()]
+            case "actionType":
+                return self._actions[index.row()].tag
+            case _:
+                return None
+
+    def roleNames(self) -> dict:
+        return self.roles
+
+    def append(self, action: macro.AbstractAction) -> None:
+        """Adds the given action at the end of the list.
+
+        Args:
+            action: The action added to the end of the list.
+        """
+        row = len(self._actions)
+        self.beginInsertRows(QtCore.QModelIndex(), row, row)
+        self._actions.append(action)
+        self._wrappers.append(self._create_action_model(action))
+        self.endInsertRows()
+        self.actionAdded.emit()
+
+    def remove(self, index: int) -> None:
+        """Removes the action at the specified index.
+
+        Args:
+            index: The index of the action to remove.
+        """
+        if not (0 <= index < len(self._actions)):
+            return
+        self.beginRemoveRows(QtCore.QModelIndex(), index, index)
+        del self._actions[index]
+        del self._wrappers[index]
+        self.endRemoveRows()
+
+    def move_from_to(self, source_index: int, destination_index: int) -> None:
+        """Move an item from a source to a destination index.
+
+        Args:
+            source_index: The index of the item to move.
+            destination_index: The index to move the item to.
+        """
+        if not (0 <= source_index < len(self._actions)):
+            return
+
+        if not self.beginMoveRows(
+            QtCore.QModelIndex(), source_index, source_index,
+            QtCore.QModelIndex(), destination_index
+        ):
+            return
+
+        action = self._actions.pop(source_index)
+        wrapper = self._wrappers.pop(source_index)
+        insert_pos = destination_index - 1 if destination_index > source_index \
+            else destination_index
+        self._actions.insert(insert_pos, action)
+        self._wrappers.insert(insert_pos, wrapper)
+        self.endMoveRows()
+
+    def _create_action_model(self, action: macro.AbstractAction) -> AbstractActionModel:
+        """Returns the action model corresponding to the given action.
+
+        Args:
+            action: The action to return the model for.
+
+        Returns:
+            QML model instance for the given action instance.
+        """
+        return MacroModel.model_lookup[action.tag](action, self)
+
+
 class MacroModel(ActionModel):
 
     # Signal emitted when the description variable's content changes
     changed = QtCore.Signal()
+    recordingChanged = QtCore.Signal()
 
     action_lookup = {
         "joystick": macro.JoystickAction.create,
@@ -700,13 +809,22 @@ class MacroModel(ActionModel):
 
     def __init__(
             self,
-            data: AbstractActionData,
+            data:  AbstractActionData,
             binding_model: InputItemBindingModel,
             action_index: SequenceIndex,
             parent_index: SequenceIndex,
             parent: QtCore.QObject
     ) -> None:
         super().__init__(data, binding_model, action_index, parent_index, parent)
+        self._action_list_model = ActionListModel(cast(MacroData, data).actions, self)
+        self._recorder = MacroRecorder(self._action_list_model.append)
+
+        self._events_to_record: list[InputType] = [
+            InputType.to_enum(s)
+            for s in Configuration().value("action", "macro", "record-event-types")
+        ]
+        self._record_timings: bool = Configuration().value(
+            "action", "macro", "record-timings")
 
     def _qml_path_impl(self) -> str:
         return "file:///" + QtCore.QFile(
@@ -718,24 +836,15 @@ class MacroModel(ActionModel):
             self._parent_sequence_index.index
         ).actionBehavior
 
-    @QtCore.Property(list, notify=changed)
-    def actions(self) -> List[AbstractActionModel]:
-        model_instances = [
-            self.model_lookup[action.tag](action, self)
-            for action in self._data.actions
-        ]
-        return model_instances
-
     @QtCore.Slot(str)
     def addAction(self, name: str) -> None:
-        self._data.actions.append(self.action_lookup[name]())
+        self._action_list_model.append(self.action_lookup[name]())
         self.changed.emit()
 
     @QtCore.Slot(int)
     def removeAction(self, index: int) -> None:
-        if index < len(self._data.actions):
-            del self._data.actions[index]
-            self.changed.emit()
+        self._action_list_model.remove(index)
+        self.changed.emit()
 
     @QtCore.Slot(int, int, str)
     def dropCallback(
@@ -744,22 +853,58 @@ class MacroModel(ActionModel):
         source_index: int,
         mode: str
     ) -> None:
-        source_item = self._data.actions[source_index]
-        target_item = self._data.actions[target_index]
-        self._data.actions.remove(source_item)
-
         match mode:
             case "append":
-                self._data.actions.insert(
-                    self._data.actions.index(target_item) + 1,
-                    source_item
-                )
+                self._action_list_model.move_from_to(source_index, target_index + 1)
             case "prepend":
-                self._data.actions.insert(0, source_item)
+                self._action_list_model.move_from_to(source_index, 0)
             case _:
-                raise GremlinError(f"Invalid insertion mode '{mode}")
-
+                raise GremlinError(f"Macro: Invalid insertion mode '{mode}'")
         self.changed.emit()
+
+    @QtCore.Slot()
+    def startRecording(self) -> None:
+        if not self._recorder.is_recording:
+            self._recorder.start(self._events_to_record, self._record_timings)
+            self.recordingChanged.emit()
+
+    @QtCore.Slot()
+    def stopRecording(self) -> None:
+        if self._recorder.is_recording:
+            self._recorder.stop()
+            self.recordingChanged.emit()
+
+    def _get_record_event(self, event_type: InputType) -> bool:
+        return event_type in self._events_to_record
+
+    def _set_record_event(
+        self, event_types: InputType | tuple[InputType, ...], value: bool
+    ) -> None:
+        types = event_types if isinstance(event_types, tuple) else (event_types,)
+        if any((event_type in self._events_to_record) != value for event_type in types):
+            if value:
+                for event_type in types:
+                    if event_type not in self._events_to_record:
+                        self._events_to_record.append(event_type)
+            else:
+                self._events_to_record = [
+                    event_type for event_type in self._events_to_record
+                    if event_type not in types
+                ]
+            Configuration().set(
+                "action", "macro", "record-event-types",
+                [InputType.to_string(t) for t in self._events_to_record]
+            )
+            self.recordingChanged.emit()
+
+    def _get_record_timings(self) -> bool:
+        return self._record_timings
+
+    def _set_record_timings(self, value: bool) -> None:
+        if value != self._record_timings:
+            self._record_timings = value
+            Configuration().set("action", "macro", "record-timings", value)
+            self.recordingChanged.emit()
 
     def _get_repeat_count(self) -> int:
         if self._data.repeat_mode == MacroRepeatModes.Count:
@@ -802,6 +947,12 @@ class MacroModel(ActionModel):
             self._data.is_exclusive = state
             self.changed.emit()
 
+    actions = QtCore.Property(
+        QtCore.QObject,
+        fget=lambda self: self._action_list_model,
+        constant=True,
+    )
+
     repeatCount = QtCore.Property(
         int,
         fget=_get_repeat_count,
@@ -828,6 +979,50 @@ class MacroModel(ActionModel):
         fget=_get_is_exclusive,
         fset=_set_is_exclusive,
         notify=changed
+    )
+
+    isRecording = QtCore.Property(
+        bool,
+        fget=lambda self: self._recorder.is_recording,
+        notify=recordingChanged
+    )
+    recordKeyboard = QtCore.Property(
+        bool,
+        fget=lambda self: self._get_record_event(InputType.Keyboard),
+        fset=lambda self, value: self._set_record_event(InputType.Keyboard, value),
+        notify=recordingChanged
+    )
+    recordMouse = QtCore.Property(
+        bool,
+        fget=lambda self: self._get_record_event(InputType.Mouse),
+        fset=lambda self, value: self._set_record_event(InputType.Mouse, value),
+        notify=recordingChanged
+    )
+    recordJoystickButton = QtCore.Property(
+        bool,
+        fget=lambda self: self._get_record_event(InputType.JoystickButton),
+        fset=lambda self, value: self._set_record_event(
+            InputType.JoystickButton, value
+        ),
+        notify=recordingChanged
+    )
+    recordJoystickAxis = QtCore.Property(
+        bool,
+        fget=lambda self: self._get_record_event(InputType.JoystickAxis),
+        fset=lambda self, value: self._set_record_event(InputType.JoystickAxis, value),
+        notify=recordingChanged
+    )
+    recordJoystickHat = QtCore.Property(
+        bool,
+        fget=lambda self: self._get_record_event(InputType.JoystickHat),
+        fset=lambda self, value: self._set_record_event(InputType.JoystickHat, value),
+        notify=recordingChanged
+    )
+    recordTimings = QtCore.Property(
+        bool,
+        fget=_get_record_timings,
+        fset=_set_record_timings,
+        notify=recordingChanged
     )
 
 
@@ -948,3 +1143,55 @@ class MacroData(AbstractActionData):
 
 
 create = MacroData
+
+Configuration().register(
+    "action",
+    "macro",
+    "axis-minimum-change-amount",
+    PropertyType.Float,
+    0.05,
+    "Minimum amount of change required for a joystick axis event to be recorded "
+    "during macro recording.",
+    {
+        "min": 0.0,
+        "max": 1.0
+    },
+    True
+)
+
+Configuration().register(
+    "action",
+    "macro",
+    "axis-minimum-time-interval",
+    PropertyType.Float,
+    0.01,
+    "Minimum time in seconds between subsequent axis events of the same input in order "
+    "to record a new macro action.",
+    {
+        "min": 0.0,
+        "max": 100.0
+    },
+    True
+)
+
+Configuration().register(
+    "action",
+    "macro",
+    "record-event-types",
+    PropertyType.List,
+    ["axis", "button", "hat"],
+    "Input event types recorded during macro recording.",
+    {},
+    False
+)
+
+Configuration().register(
+    "action",
+    "macro",
+    "record-timings",
+    PropertyType.Bool,
+    False,
+    "Whether to record timing pauses between inputs during macro recording.",
+    {},
+    False
+)

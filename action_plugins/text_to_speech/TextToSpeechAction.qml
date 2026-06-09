@@ -7,6 +7,7 @@ import QtQuick.Controls.Universal
 import QtQuick.Layouts
 
 import Gremlin.ActionPlugins
+import Gremlin.Base
 import Gremlin.Profile
 import "../../qml"
 

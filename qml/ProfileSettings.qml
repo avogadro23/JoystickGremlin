@@ -7,6 +7,7 @@ import QtQuick.Dialogs
 import QtQuick.Layouts
 import Qt.labs.qmlmodels
 
+import Gremlin.Base
 import Gremlin.Profile
 import Gremlin.Style
 import "helpers.js" as Helpers
@@ -239,7 +240,7 @@ Item {
                     maxValue: 1.0
                     stepSize: 0.05
 
-                    internalWidth: 130
+                    // internalWidth: 130
 
                     value: model.value
                     onValueModified: (newValue) => { model.value = newValue }

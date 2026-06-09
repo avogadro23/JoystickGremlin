@@ -1,6 +1,0 @@
-module Compact
-Button Button.qml
-ButtonStateSelector ButtonStateSelector.qml
-CheckBox CheckBox.qml
-ComboBox ComboBox.qml
-ItemDelegate ItemDelegate.qml

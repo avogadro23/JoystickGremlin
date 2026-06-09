@@ -13,6 +13,7 @@ Item {
 
     property bool isDarkMode: false
 
+    // Color definitions.
     property var accent: Universal.accent
     property var theme: isDarkMode ? Universal.Dark : Universal.Light
     property var background: isDarkMode ? Universal.foreground : Universal.background
@@ -22,4 +23,8 @@ Item {
     property var medColor: isDarkMode ? Qt.hsva(0.0, 0.0, 0.4, 1.0) : Qt.hsva(0.0, 0.0, 0.6, 1.0)
     property var error: "#A20025"
     property var warning: "#F0A30A"
+
+    // Spinbox presets.
+    property int decimalsPrecise: 4
+    property int decimalsStandard: 2
 }

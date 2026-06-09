@@ -19,6 +19,7 @@ T.CheckBox {
     padding: 2
     spacing: 6
     font.pixelSize: 14
+    property bool useSystemFocusVisuals: true
 
     indicator: CheckIndicator {
         x: control.text ? (control.mirrored ? control.width - width - control.rightPadding : control.leftPadding) : control.leftPadding + (control.availableWidth - width) / 2

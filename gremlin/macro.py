@@ -4,29 +4,27 @@
 
 from __future__ import annotations
 
-from abc import (
-    ABC,
-    abstractmethod,
-)
 import collections
 import functools
 import logging
 import time
+import uuid
+from abc import (
+    ABC,
+    abstractmethod,
+)
 from threading import (
     Event,
     Lock,
     Thread,
 )
 from typing import (
-    override,
     Tuple,
+    override,
 )
-import uuid
 from xml.etree import ElementTree
 
 import dill
-from vjoy.vjoy import VJoyProxy
-
 from gremlin import (
     error,
     event_handler,
@@ -37,11 +35,11 @@ from gremlin import (
 from gremlin.common import SingletonDecorator
 from gremlin.config import Configuration
 from gremlin.keyboard import (
-    send_key_down,
-    send_key_up,
+    Key,
     key_from_code,
     key_from_name,
-    Key,
+    send_key_down,
+    send_key_up,
 )
 from gremlin.logical_device import LogicalDevice
 from gremlin.types import (
@@ -50,6 +48,7 @@ from gremlin.types import (
     MouseButton,
     PropertyType,
 )
+from vjoy.vjoy import VJoyProxy
 
 MacroEntry = collections.namedtuple(
     "MacroEntry",
