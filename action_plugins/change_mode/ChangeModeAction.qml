@@ -10,6 +10,7 @@ import QtQuick.Controls.Universal
 
 import Gremlin.Profile
 import Gremlin.ActionPlugins
+import Gremlin.Base
 import "../../qml"
 
 
@@ -55,7 +56,7 @@ Item {
                 text: "Switch to mode"
             }
 
-            JGComboBox {
+            TooltipComboBox {
                 id: _switch_combo
 
                 Layout.preferredWidth: 200
@@ -123,7 +124,7 @@ Item {
                     RowLayout {
                         required property int index
 
-                        JGComboBox {
+                        TooltipComboBox {
                             Layout.preferredWidth: 200
 
                             model: ModeListModel {}
@@ -168,7 +169,7 @@ Item {
                 text: "Temporarily switch to mode"
             }
 
-            JGComboBox {
+            TooltipComboBox {
                 id: temporary_combo
 
                 Layout.preferredWidth: 200

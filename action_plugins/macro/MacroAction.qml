@@ -349,6 +349,7 @@ Item {
                         // wrong item being displayed.
                         validTypes: ["axis", "button", "hat"]
                         logicalInputIdentifier: modelData.logicalInputIdentifier
+                        useCompact: true
 
                         onLogicalInputIdentifierChanged: () => {
                             modelData.logicalInputIdentifier = logicalInputIdentifier
@@ -472,7 +473,7 @@ Item {
 
                         text: "X-Axis"
                     }
-                    JGSpinBox {
+                    Compact.SpinBox {
                         value: modelData.dx
 
                         onValueModified: () => { modelData.dx = value }
@@ -483,7 +484,7 @@ Item {
 
                         leftPadding: 25
                     }
-                    JGSpinBox {
+                    Compact.SpinBox {
                         value: modelData.dy
 
                         onValueModified: () => { modelData.dy = value }
@@ -533,6 +534,7 @@ Item {
                         Layout.alignment: Qt.AlignTop
 
                         validTypes: ["axis", "button", "hat"]
+                        useCompact: true
 
                         onSelectionChanged: (vjoyId, inputType, inputId) => {
                             modelData.vjoyId = vjoyId

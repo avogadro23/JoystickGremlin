@@ -1,16 +1,20 @@
-﻿// -*- coding: utf-8; -*-
+// -*- coding: utf-8; -*-
 // SPDX-License-Identifier: GPL-3.0-only
 
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+import Gremlin.Base as Base
+import Gremlin.Compact as Compact
 import Gremlin.Device
+import Gremlin.Style
 
 
 Item {
     id: _root
 
+    property bool useCompact: false
     property alias validTypes: _vjoy.validTypes
 
     signal selectionChanged(int deviceId, string inputType, int inputId)
@@ -18,14 +22,16 @@ Item {
     implicitHeight: _content.height
     implicitWidth: _content.implicitWidth
 
-    // React to the validTypes value being changed from an external source.
     function initialize(vjoy_id, input_type, input_id) {
         _vjoy.setInitialState(vjoy_id, input_type, input_id)
     }
 
     function updateState() {
-        _vjoy.setState(_device.currentText, _input.currentText)
+        _vjoy.setState(_deviceLoader.item.currentText, _inputLoader.item.currentText)
     }
+
+    Component { id: _baseVariant;    Base.TooltipComboBox    {} }
+    Component { id: _compactVariant; Compact.TooltipComboBox {} }
 
     VJoyDevices {
         id: _vjoy
@@ -35,9 +41,19 @@ Item {
         }
 
         onCurrentValuesChanged: (vjoy_name, input_name) => {
-            _device.currentIndex = _device.find(vjoy_name)
-            _input.currentIndex = _input.find(input_name)
+            _deviceLoader.item.currentIndex = _deviceLoader.item.find(vjoy_name)
+            _inputLoader.item.currentIndex  = _inputLoader.item.find(input_name)
         }
+    }
+
+    Connections {
+        target: _deviceLoader.item
+        function onActivated(index) { updateState() }
+    }
+
+    Connections {
+        target: _inputLoader.item
+        function onActivated(index) { updateState() }
     }
 
     RowLayout {
@@ -47,26 +63,33 @@ Item {
         anchors.right: parent.right
         spacing: 10
 
-        ComboBox {
-            id: _device
+        Loader {
+            id: _deviceLoader
 
             Layout.minimumWidth: 150
             Layout.fillWidth: true
 
-            model: _vjoy.vjoyDevices
+            sourceComponent: _root.useCompact ? _compactVariant : _baseVariant
 
-            onActivated: (index) => { updateState() }
+            onLoaded: {
+                item.width = Qt.binding(() => _deviceLoader.width)
+                item.model = Qt.binding(() => _vjoy.vjoyDevices)
+                item.popup.contentItem.showScrollBar = false
+            }
         }
 
-        BetterComboBox {
-            id: _input
+        Loader {
+            id: _inputLoader
 
             Layout.minimumWidth: 150
             Layout.fillWidth: true
 
-            model: _vjoy.inputChoices
+            sourceComponent: _root.useCompact ? _compactVariant : _baseVariant
 
-            onActivated: (index) =>  { updateState() }
+            onLoaded: {
+                item.width = Qt.binding(() => _inputLoader.width)
+                item.model = Qt.binding(() => _vjoy.inputChoices)
+            }
         }
 
         HorizontalDivider {}

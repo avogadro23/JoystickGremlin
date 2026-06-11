@@ -1,4 +1,4 @@
-﻿// -*- coding: utf-8; -*-
+// -*- coding: utf-8; -*-
 // SPDX-License-Identifier: GPL-3.0-only
 
 import QtQuick
@@ -9,7 +9,8 @@ import QtQuick.Window
 import QtQuick.Controls.Universal
 
 import Gremlin.ActionPlugins
-import Gremlin.Base
+import Gremlin.Base as Base
+import Gremlin.Compact as Compact
 import Gremlin.Profile
 import "../../qml"
 
@@ -18,11 +19,17 @@ Item {
     id: _root
 
     property MapToMouseModel action
+    property bool useCompact: false
 
     property int limitLow: 0
     property int limitHigh: 100000
 
     implicitHeight: _content.height
+
+    Component { id: _baseSpinBox;         Base.SpinBox         {} }
+    Component { id: _compactSpinBox;      Compact.SpinBox      {} }
+    Component { id: _baseFloatSpinBox;    Base.FloatSpinBox    {} }
+    Component { id: _compactFloatSpinBox; Compact.FloatSpinBox {} }
 
     ColumnLayout {
         id: _content
@@ -92,17 +99,18 @@ Item {
                 text: "Minimum speed"
             }
 
-            JGSpinBox {
+            Loader {
                 id: _min_speed_button
 
                 Layout.fillWidth: true
 
-                value: _root.action.minSpeed
-                from: limitLow
-                to: _max_speed_button.value
+                sourceComponent: _root.useCompact ? _compactSpinBox : _baseSpinBox
 
-                onValueModified: function() {
-                    _root.action.minSpeed = value
+                onLoaded: {
+                    item.from  = _root.limitLow
+                    item.to    = Qt.binding(() => _max_speed_button.item ? _max_speed_button.item.value : _root.limitHigh)
+                    item.value = Qt.binding(() => _root.action.minSpeed)
+                    item.onValueModified.connect(() => { _root.action.minSpeed = item.value })
                 }
             }
 
@@ -117,17 +125,18 @@ Item {
                 text: "Maximum speed"
             }
 
-            JGSpinBox {
+            Loader {
                 id: _max_speed_button
 
                 Layout.fillWidth: true
 
-                value: _root.action.maxSpeed
-                from: _min_speed_button.value
-                to: limitHigh
+                sourceComponent: _root.useCompact ? _compactSpinBox : _baseSpinBox
 
-                onValueModified: function() {
-                    _root.action.maxSpeed = value
+                onLoaded: {
+                    item.from  = Qt.binding(() => _min_speed_button.item ? _min_speed_button.item.value : _root.limitLow)
+                    item.to    = _root.limitHigh
+                    item.value = Qt.binding(() => _root.action.maxSpeed)
+                    item.onValueModified.connect(() => { _root.action.maxSpeed = item.value })
                 }
             }
 
@@ -135,15 +144,16 @@ Item {
                 text: "Time to maximum speed"
             }
 
-            FloatSpinBox {
-                minValue: 0
-                maxValue: 60
-                value: _root.action.timeToMaxSpeed
-                stepSize: 1.0
-                decimals: 1
+            Loader {
+                sourceComponent: _root.useCompact ? _compactFloatSpinBox : _baseFloatSpinBox
 
-                onValueModified: (newValue) => {
-                    _root.action.timeToMaxSpeed = newValue
+                onLoaded: {
+                    item.minValue = 0
+                    item.maxValue = 60
+                    item.stepSize = 1.0
+                    item.decimals = 1
+                    item.value    = Qt.binding(() => _root.action.timeToMaxSpeed)
+                    item.onValueModified.connect((newValue) => { _root.action.timeToMaxSpeed = newValue })
                 }
             }
 
@@ -153,14 +163,15 @@ Item {
                 text: "Direction"
             }
 
-            JGSpinBox {
-                value: _root.action.direction
-                from: 0
-                to: 360
-                stepSize: 15
+            Loader {
+                sourceComponent: _root.useCompact ? _compactSpinBox : _baseSpinBox
 
-                onValueModified: function() {
-                    _root.action.direction = value
+                onLoaded: {
+                    item.from     = 0
+                    item.to       = 360
+                    item.stepSize = 15
+                    item.value    = Qt.binding(() => _root.action.direction)
+                    item.onValueModified.connect(() => { _root.action.direction = item.value })
                 }
             }
         }
@@ -197,16 +208,19 @@ Item {
                     text: "Minimum speed"
                 }
 
-                JGSpinBox {
+                Loader {
                     id: _min_speed_axis
 
                     Layout.preferredWidth: 150
 
-                    value: _root.action.minSpeed
-                    from: limitLow
-                    to: _max_speed_axis.value
+                    sourceComponent: _root.useCompact ? _compactSpinBox : _baseSpinBox
 
-                    onValueModified: () => { _root.action.minSpeed = value }
+                    onLoaded: {
+                        item.from  = _root.limitLow
+                        item.to    = Qt.binding(() => _max_speed_axis.item ? _max_speed_axis.item.value : _root.limitHigh)
+                        item.value = Qt.binding(() => _root.action.minSpeed)
+                        item.onValueModified.connect(() => { _root.action.minSpeed = item.value })
+                    }
                 }
 
                 Label {
@@ -216,16 +230,19 @@ Item {
                     text: "Maximum speed"
                 }
 
-                JGSpinBox {
+                Loader {
                     id: _max_speed_axis
 
                     Layout.preferredWidth: 150
 
-                    value: _root.action.maxSpeed
-                    from: _min_speed_axis.value
-                    to: limitHigh
+                    sourceComponent: _root.useCompact ? _compactSpinBox : _baseSpinBox
 
-                    onValueModified: () => { _root.action.maxSpeed = value }
+                    onLoaded: {
+                        item.from  = Qt.binding(() => _min_speed_axis.item ? _min_speed_axis.item.value : _root.limitLow)
+                        item.to    = _root.limitHigh
+                        item.value = Qt.binding(() => _root.action.maxSpeed)
+                        item.onValueModified.connect(() => { _root.action.maxSpeed = item.value })
+                    }
                 }
             }
         }
@@ -242,17 +259,18 @@ Item {
                 text: "Minimum speed"
             }
 
-            JGSpinBox {
+            Loader {
                 id: _min_speed_hat
 
                 Layout.fillWidth: true
 
-                value: _root.action.minSpeed
-                from: limitLow
-                to: _max_speed_hat.value
+                sourceComponent: _root.useCompact ? _compactSpinBox : _baseSpinBox
 
-                onValueModified: function() {
-                    _root.action.minSpeed = value
+                onLoaded: {
+                    item.from  = _root.limitLow
+                    item.to    = Qt.binding(() => _max_speed_hat.item ? _max_speed_hat.item.value : _root.limitHigh)
+                    item.value = Qt.binding(() => _root.action.minSpeed)
+                    item.onValueModified.connect(() => { _root.action.minSpeed = item.value })
                 }
             }
 
@@ -262,17 +280,18 @@ Item {
                 text: "Maximum speed"
             }
 
-            JGSpinBox {
+            Loader {
                 id: _max_speed_hat
 
                 Layout.fillWidth: true
 
-                value: _root.action.maxSpeed
-                from: _min_speed_hat.value
-                to: limitHigh
+                sourceComponent: _root.useCompact ? _compactSpinBox : _baseSpinBox
 
-                onValueModified: function() {
-                    _root.action.maxSpeed = value
+                onLoaded: {
+                    item.from  = Qt.binding(() => _min_speed_hat.item ? _min_speed_hat.item.value : _root.limitLow)
+                    item.to    = _root.limitHigh
+                    item.value = Qt.binding(() => _root.action.maxSpeed)
+                    item.onValueModified.connect(() => { _root.action.maxSpeed = item.value })
                 }
             }
 
@@ -280,15 +299,16 @@ Item {
                 text: "Time to maximum speed"
             }
 
-            FloatSpinBox {
-                minValue: 0
-                maxValue: 30
-                value: _root.action.timeToMaxSpeed
-                stepSize: 1.0
-                decimals: 1
+            Loader {
+                sourceComponent: _root.useCompact ? _compactFloatSpinBox : _baseFloatSpinBox
 
-                onValueModified: (newValue) => {
-                    _root.action.timeToMaxSpeed = newValue
+                onLoaded: {
+                    item.minValue = 0
+                    item.maxValue = 30
+                    item.stepSize = 1.0
+                    item.decimals = 1
+                    item.value    = Qt.binding(() => _root.action.timeToMaxSpeed)
+                    item.onValueModified.connect((newValue) => { _root.action.timeToMaxSpeed = newValue })
                 }
             }
         }

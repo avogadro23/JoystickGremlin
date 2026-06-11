@@ -9,3 +9,4 @@ Label Label.qml
 RecordButton RecordButton.qml
 RoundButton RoundButton.qml
 SpinBox SpinBox.qml
+TooltipComboBox TooltipComboBox.qml

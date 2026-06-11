@@ -178,7 +178,7 @@ JGListView {
                     isValid: modelData.isValid
                 }
 
-                JGComboBox {
+                TooltipComboBox {
                     id: _mode
 
                     Layout.fillWidth: true
@@ -211,7 +211,7 @@ JGListView {
                     isValid: modelData.isValid
                 }
 
-                JGComboBox {
+                TooltipComboBox {
                     id: _selection
 
                     Layout.fillWidth: true

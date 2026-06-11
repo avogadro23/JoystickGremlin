@@ -10,6 +10,7 @@ import QtQuick.Controls.Universal
 T.SpinBox {
     id: control
 
+    editable: true // qmllint disable missing-property
 
     // Note: the width of the indicators are calculated into the padding
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,

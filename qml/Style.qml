@@ -27,4 +27,8 @@ Item {
     // Spinbox presets.
     property int decimalsPrecise: 4
     property int decimalsStandard: 2
+
+    // Various shared dimensions.
+    property int tooltipMaxWidth: 500
+    property int tooltipDelayMs: 500
 }

@@ -8,6 +8,7 @@ import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtQuick.Window
 
+import Gremlin.Base
 import Gremlin.Config
 import Gremlin.Device
 import Gremlin.Profile
@@ -307,7 +308,7 @@ ApplicationWindow {
                 text: "Configuring mode"
             }
 
-            JGComboBox {
+            TooltipComboBox {
                 id: _modeSelector
 
                 Layout.preferredWidth: 200
