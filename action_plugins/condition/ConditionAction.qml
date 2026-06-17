@@ -12,6 +12,7 @@ import Gremlin.Profile
 import Gremlin.Style
 import Gremlin.Util
 import "../../qml"
+import "../../qml/helpers.js" as Helpers
 
 Item {
     id: _root
@@ -87,7 +88,6 @@ Item {
             model: _root.action.conditions
 
             delegate: _conditionDelegate
-            // delegate: _moreDelegation
         }
 
         // +-------------------------------------------------------------------
@@ -171,47 +171,6 @@ Item {
         }
     }
 
-    Component {
-        id: _moreDelegation
-
-        Item {
-        Loader {
-            active: modelData.conditionType === "vjoy"
-
-            sourceComponent: RowLayout {
-                Label {
-                    Layout.preferredWidth: conditionLabelWidth
-                    text: "vJoy Condition"
-                }
-
-                VJoySelector {
-                    validTypes: ["axis", "button", "hat"]
-
-                    onSelectionChanged: (vjoyId, inputType, inputId) => {
-                        modelData.vjoyDeviceId = vjoyId
-                        modelData.vJoyInputType = inputType
-                        modelData.vjoyInputId = inputId
-                    }
-
-                    Component.onCompleted: () => {
-                        initialize(
-                            modelData.vjoyDeviceId,
-                            modelData.vjoyInputType,
-                            modelData.vjoyInputId
-                        )
-                    }
-                }
-
-                Label { text: "<b>True</b> when" }
-
-                Comparator {
-                    comparator: modelData.comparator
-                }
-            }
-        }
-        }
-    }
-
     DelegateChooser {
         id: _conditionDelegate
 
@@ -221,13 +180,9 @@ Item {
             roleValue: "current_input"
 
             ConditionComponent {
+                typeIconSource: "qrc:/icons/physical_joystick"
+
                 conditionItem: RowLayout {
-                    Label {
-                        Layout.preferredWidth: conditionLabelWidth
-
-                        text: "Current Input"
-                    }
-
                     Comparator {
                         comparator: modelData.comparator
                     }
@@ -241,15 +196,17 @@ Item {
             roleValue: "joystick"
 
             ConditionComponent {
+                typeIconSource: "qrc:/icons/physical_joystick"
+
                 conditionItem: RowLayout {
-                    Label {
-                        Layout.preferredWidth: conditionLabelWidth
+                    InputListener {
+                        text: Helpers.safeText(toUnorderedList(modelData.states))
 
-                        text: "Joystick"
-                    }
-
-                    Label {
-                        text: toUnorderedList(modelData.states)
+                        callback: (inputs) => {
+                            modelData.updateFromUserInput(inputs)
+                        }
+                        multipleInputs: true
+                        eventTypes: ["axis", "button", "hat"]
                     }
 
                     Comparator {
@@ -258,13 +215,6 @@ Item {
 
                     LayoutHorizontalSpacer {}
 
-                    InputListener {
-                        callback: (inputs) => {
-                            modelData.updateFromUserInput(inputs)
-                        }
-                        multipleInputs: true
-                        eventTypes: ["axis", "button", "hat"]
-                    }
                 }
             }
         }
@@ -273,16 +223,19 @@ Item {
             roleValue: "keyboard"
 
             ConditionComponent {
+                typeIcon: bsi.icons.icon_keyboard
+
                 conditionItem: RowLayout {
+                    InputListener {
+                        text: Helpers.safeText(
+                            modelData.key, toUnorderedList(modelData.states)
+                        )
 
-                    Label {
-                        Layout.preferredWidth: conditionLabelWidth
-
-                        text: "Keyboard"
-                    }
-
-                    Label {
-                        text: toUnorderedList(modelData.states)
+                        callback: (inputs) => {
+                            modelData.updateFromUserInput(inputs)
+                        }
+                        multipleInputs: true
+                        eventTypes: ["key"]
                     }
 
                     Comparator {
@@ -290,14 +243,6 @@ Item {
                     }
 
                     LayoutHorizontalSpacer {}
-
-                    InputListener {
-                        callback: (inputs) => {
-                            modelData.updateFromUserInput(inputs)
-                        }
-                        multipleInputs: true
-                        eventTypes: ["key"]
-                    }
                 }
             }
         }
@@ -306,17 +251,15 @@ Item {
             roleValue: "logical_device"
 
             ConditionComponent {
-                conditionItem: RowLayout {
-                    Label {
-                        Layout.preferredWidth: conditionLabelWidth
-                        text: "Logical Device"
-                    }
+                typeIcon: bsi.icons.icon_logical_device
 
+                conditionItem: RowLayout {
                     LogicalDeviceSelector {
                         // The ordering is important, swapping it will result in the
                         // wrong item being displayed.
                         validTypes: ["axis", "button", "hat"]
                         logicalInputIdentifier: modelData.logicalInputIdentifier
+                        useCompact: true
 
                         onLogicalInputIdentifierChanged: () => {
                             modelData.logicalInputIdentifier = logicalInputIdentifier
@@ -338,14 +281,12 @@ Item {
             roleValue: "vjoy"
 
             ConditionComponent {
-                conditionItem: RowLayout {
-                    Label {
-                        Layout.preferredWidth: conditionLabelWidth
-                        text: "vJoy Condition"
-                    }
+                typeIcon: bsi.icons.icon_joystick
 
+                conditionItem: RowLayout {
                     VJoySelector {
                         validTypes: ["axis", "button", "hat"]
+                        useCompact: true
 
                         onSelectionChanged: (vjoyId, inputType, inputId) => {
                             modelData.vjoyDeviceId = vjoyId
@@ -399,17 +340,30 @@ Item {
 
     component ConditionComponent : RowLayout {
         property alias conditionItem: _actionLoader.sourceComponent
+        property string typeIcon: ""
+        property string typeIconSource: ""
 
         Label {
-            text: bsi.icons.bullet_point
+            visible: typeIcon !== ""
+            text: typeIcon
             font.family: "bootstrap-icons"
-            font.pixelSize: 24
+            font.pixelSize: 16
+        }
+        Image {
+            Layout.preferredWidth: 16
+            Layout.preferredHeight: 16
+
+            visible: typeIconSource !== ""
+            source: typeIconSource
+            fillMode: Image.PreserveAspectFit
         }
 
         // Contains the specific condition component.
         Loader {
             id: _actionLoader
+
             Layout.fillWidth: true
+            Layout.leftMargin: 10
         }
 
         LayoutHorizontalSpacer {}

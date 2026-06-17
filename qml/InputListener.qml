@@ -19,7 +19,8 @@ Item {
     property alias text: _name.text
     property var callback
 
-    implicitHeight: _button.height
+    implicitWidth: _button.implicitWidth
+    implicitHeight: _button.implicitHeight
 
     // Underlying input listener model.
     InputListenerModel {

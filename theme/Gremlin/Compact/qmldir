@@ -4,6 +4,7 @@ ButtonStateSelector ButtonStateSelector.qml
 CheckBox CheckBox.qml
 ComboBox ComboBox.qml
 FloatSpinBox FloatSpinBox.qml
+HatDirectionSelectorV2 HatDirectionSelectorV2.qml
 ItemDelegate ItemDelegate.qml
 Label Label.qml
 RecordButton RecordButton.qml

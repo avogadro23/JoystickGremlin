@@ -8,9 +8,8 @@ import QtQuick.Window
 
 import Gremlin.ActionPlugins
 import Gremlin.Base
+import Gremlin.Compact as Compact
 import Gremlin.Util
-
-import "../../qml"
 
 
 Item {
@@ -28,7 +27,7 @@ Item {
             Layout.preferredWidth: active ? implicitWidth : 0
 
             sourceComponent: RowLayout {
-                ButtonStateSelector {
+                Compact.ButtonStateSelector {
                     isPressed: comparator.isPressed
                     onStateModified: (isPressed) => {
                         comparator.isPressed = isPressed
@@ -45,7 +44,7 @@ Item {
             sourceComponent: RowLayout {
                 Label { text: "between" }
 
-                FloatSpinBox {
+                Compact.FloatSpinBox {
                     id: _lower
 
                     minValue: -1.0
@@ -60,7 +59,7 @@ Item {
 
                 Label { text: "and" }
 
-                FloatSpinBox {
+                Compact.FloatSpinBox {
                     id: _upper
 
                     minValue: _lower.value
@@ -81,7 +80,7 @@ Item {
             Layout.preferredWidth: active ? implicitWidth : 0
 
             sourceComponent: RowLayout {
-                HatDirectionSelectorV2 {
+                Compact.HatDirectionSelectorV2 {
                     directions: active ? comparator.model : null
                 }
             }
