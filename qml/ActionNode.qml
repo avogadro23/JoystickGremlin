@@ -153,6 +153,8 @@ Item {
             }
 
             Label {
+                id: _headerIcon
+
                 font.family: "bootstrap-icons"
                 font.pixelSize: 24
 
@@ -228,7 +230,7 @@ Item {
             property var dynamicItem: null
 
             Layout.fillWidth: true
-            Layout.leftMargin: _headerLabel.x
+            Layout.leftMargin: _headerIcon.x
 
             visible: _foldButton.checked
 
