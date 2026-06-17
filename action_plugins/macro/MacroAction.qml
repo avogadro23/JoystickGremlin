@@ -235,7 +235,7 @@ Item {
             roleValue: "joystick"
 
             DraggableAction {
-                icon: bsi.icons.icon_joystick
+                icon_qrc: "qrc:/icons/physical_joystick"
                 label: "Joystick"
 
                 actionItem: RowLayout {
@@ -626,22 +626,46 @@ Item {
     // Predefined button that removes a given action.
     component DeleteButton : IconButton {
         text: bsi.icons.remove
-        font.pixelSize: 14
+        font.pixelSize: 16
 
         onClicked: () => { _root.action.removeAction(index) }
     }
 
     // Displays an icon and also acts as the drag handle for the drag&drop
     // implementation.
-    component Icon : Label {
-        property string iconName
+    component Icon : Item {
+        property string iconName: ""
+        property string iconSource: ""
+        property string label: ""
         property var target
 
         property alias dragActive: _dragArea.drag.active
 
-        text: bsi.icons.drag_handle + iconName
+        implicitWidth: _iconRow.implicitWidth
+        implicitHeight: _iconRow.implicitHeight
 
-        font.pixelSize: 14
+        Row {
+            id: _iconRow
+
+            Label {
+                text: bsi.icons.drag_handle
+                font.family: "bootstrap-icons"
+                font.pixelSize: 16
+            }
+            Label {
+                visible: iconName !== ""
+                text: iconName
+                font.family: "bootstrap-icons"
+                font.pixelSize: 16
+            }
+            Image {
+                visible: iconSource !== ""
+                source: iconSource
+                width: 16
+                height: 16
+                fillMode: Image.PreserveAspectFit
+            }
+        }
 
         MouseArea {
             id: _dragArea
@@ -657,6 +681,16 @@ Item {
                     target.Drag.imageSource = result.url
                 })
             }
+        }
+
+        HoverHandler {
+            id: _iconHover
+        }
+
+        ToolTip {
+            visible: _iconHover.hovered && label !== ""
+            text: label
+            delay: 500
         }
     }
 
@@ -674,12 +708,8 @@ Item {
             _root.action.dropCallback(targetIndex, drop.text, insertionMode)
         }
 
-        onEntered: () => {
-            _marker.opacity = 1.0
-        }
-        onExited: () => {
-            _marker.opacity = 0.0
-        }
+        onEntered: () => { _marker.opacity = 1.0 }
+        onExited: () => { _marker.opacity = 0.0 }
 
         Rectangle {
             anchors.fill: parent
@@ -703,8 +733,9 @@ Item {
         id: _draggableAction
 
         // Widget properties.
-        property string icon
-        property string label
+        property string icon: ""
+        property string icon_qrc: ""
+        property string label: ""
         property alias actionItem: _actionLoader.sourceComponent
 
         // Ensure entire width is taken up.
@@ -736,18 +767,12 @@ Item {
                 id: _icon
 
                 Layout.alignment: Qt.AlignVCenter
-                font.family: "bootstrap-icons"
+                Layout.rightMargin: 10
 
                 iconName: icon
+                iconSource: icon_qrc
+                label: _draggableAction.label
                 target: _draggableAction
-            }
-
-            Label {
-                Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: 125
-
-                text: label
-                font.pixelSize: 16
             }
 
             // Holds action specific UI elements.

@@ -1,7 +1,8 @@
-<!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="icons"></qresource>
-  <qresource prefix="/">
-    <file alias="BootstrapIcons">gfx/bootstrap-icons.otf</file>
-  </qresource>
+    <qresource prefix="icons">
+        <file alias="physical_joystick">gfx/icon_joystick_physical.svg</file>
+    </qresource>
+    <qresource prefix="/">
+        <file alias="BootstrapIcons">gfx/bootstrap-icons.otf</file>
+    </qresource>
 </RCC>
