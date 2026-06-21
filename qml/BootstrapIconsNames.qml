@@ -36,6 +36,7 @@ QtObject {
     readonly property string icon_pause: "\uF4C3"
     readonly property string icon_joystick: "\uF448"
     readonly property string icon_logical_device: "\uF2D6"
+    readonly property string icon_current_input: "\uF3E8"
 
     // Hat direction indicator icons.
     readonly property string hat_n: "\uF148"

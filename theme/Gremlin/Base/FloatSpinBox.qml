@@ -31,7 +31,7 @@ Item {
     }
 
     function toInt(value) {
-        return value * decimalFactor
+        return Math.round(value * decimalFactor)
     }
 
     Component {
@@ -69,7 +69,8 @@ Item {
             }
 
             item.valueFromText = (text, locale) => {
-                return Number.fromLocaleString(locale, text) * decimalFactor
+                return Math.round(
+                    Number.fromLocaleString(locale, text) * decimalFactor)
             }
 
             item.value = toInt(_root.value)
