@@ -1,0 +1,18 @@
+<action id="b5d8f3a1-2c47-4e9a-8f16-7d0e4a6c9b32" type="run-command">
+    <property type="string">
+        <name>executable</name>
+        <value>C:\Windows\System32\notepad.exe</value>
+    </property>
+    <property type="string">
+        <name>arguments</name>
+        <value>"C:\my notes\todo.txt" --readonly</value>
+    </property>
+    <property type="string">
+        <name>action-label</name>
+        <value></value>
+    </property>
+    <property type="activation-mode">
+        <name>activation-mode</name>
+        <value>press</value>
+    </property>
+</action>
