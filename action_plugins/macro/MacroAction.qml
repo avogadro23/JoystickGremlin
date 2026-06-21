@@ -474,6 +474,9 @@ Item {
                         text: "X-Axis"
                     }
                     Compact.SpinBox {
+                        from: -10000
+                        to: 10000
+                        stepSize: 5
                         value: modelData.dx
 
                         onValueModified: () => { modelData.dx = value }
@@ -485,6 +488,9 @@ Item {
                         leftPadding: 25
                     }
                     Compact.SpinBox {
+                        from: -10000
+                        to: 10000
+                        stepSize: 5
                         value: modelData.dy
 
                         onValueModified: () => { modelData.dy = value }
