@@ -180,7 +180,8 @@ Item {
             roleValue: "current_input"
 
             ConditionComponent {
-                typeIconSource: "qrc:/icons/physical_joystick"
+                typeIcon: bsi.icons.icon_current_input
+                conditionName: "Current Input"
 
                 conditionItem: RowLayout {
                     Comparator {
@@ -197,6 +198,7 @@ Item {
 
             ConditionComponent {
                 typeIconSource: "qrc:/icons/physical_joystick"
+                conditionName: "Joystick"
 
                 conditionItem: RowLayout {
                     InputListener {
@@ -224,6 +226,7 @@ Item {
 
             ConditionComponent {
                 typeIcon: bsi.icons.icon_keyboard
+                conditionName: "Keyboard"
 
                 conditionItem: RowLayout {
                     InputListener {
@@ -252,6 +255,7 @@ Item {
 
             ConditionComponent {
                 typeIcon: bsi.icons.icon_logical_device
+                conditionName: "Logical Device"
 
                 conditionItem: RowLayout {
                     LogicalDeviceSelector {
@@ -282,6 +286,7 @@ Item {
 
             ConditionComponent {
                 typeIcon: bsi.icons.icon_joystick
+                conditionName: "vJoy"
 
                 conditionItem: RowLayout {
                     VJoySelector {
@@ -342,20 +347,40 @@ Item {
         property alias conditionItem: _actionLoader.sourceComponent
         property string typeIcon: ""
         property string typeIconSource: ""
+        property string conditionName: ""
 
-        Label {
-            visible: typeIcon !== ""
-            text: typeIcon
-            font.family: "bootstrap-icons"
-            font.pixelSize: 16
-        }
-        Image {
-            Layout.preferredWidth: 16
-            Layout.preferredHeight: 16
+        Item {
+            implicitWidth: _iconRow.implicitWidth
+            implicitHeight: _iconRow.implicitHeight
 
-            visible: typeIconSource !== ""
-            source: typeIconSource
-            fillMode: Image.PreserveAspectFit
+            Row {
+                id: _iconRow
+
+                Label {
+                    visible: typeIcon !== ""
+                    text: typeIcon
+                    font.family: "bootstrap-icons"
+                    font.pixelSize: 16
+                }
+                Image {
+                    width: 16
+                    height: 16
+
+                    visible: typeIconSource !== ""
+                    source: typeIconSource
+                    fillMode: Image.PreserveAspectFit
+                }
+            }
+
+            HoverHandler {
+                id: _iconHover
+            }
+
+            ToolTip {
+                visible: _iconHover.hovered && conditionName !== ""
+                text: conditionName
+                delay: 500
+            }
         }
 
         // Contains the specific condition component.
