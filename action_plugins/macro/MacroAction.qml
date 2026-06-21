@@ -373,6 +373,7 @@ Item {
                         Compact.FloatSpinBox {
                             minValue: -1.0
                             maxValue: 1.0
+                            decimals: Style.decimalsPrecise
                             value: modelData.axisValue
 
                             onValueModified: (newValue) => {
@@ -574,6 +575,7 @@ Item {
                         Compact.FloatSpinBox {
                             minValue: -1.0
                             maxValue: 1.0
+                            decimals: Style.decimalsPrecise
                             value: modelData.axisValue
 
                             onValueModified: (newValue) => {

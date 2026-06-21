@@ -119,9 +119,10 @@ Item {
             FloatSpinBox {
                 id: _innerValue
 
-                value: _root.action.innerDeadzone
                 minValue: 0.0
                 maxValue: 1.0
+                decimals: Style.decimalsPrecise
+                value: _root.action.innerDeadzone
 
                 onValueModified: (newValue) => {
                     _root.action.innerDeadzone = newValue
@@ -137,9 +138,10 @@ Item {
             FloatSpinBox {
                 id: _outerValue
 
-                value: _root.action.outerDeadzone
                 minValue: 0.0
                 maxValue: 1.0
+                decimals: Style.decimalsPrecise
+                value: _root.action.outerDeadzone
 
                 onValueModified: (newValue) => {
                     _root.action.outerDeadzone = newValue

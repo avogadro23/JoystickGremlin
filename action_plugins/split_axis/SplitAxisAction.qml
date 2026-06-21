@@ -34,8 +34,9 @@ Item {
             FloatSpinBox {
                 minValue: -1.0
                 maxValue: 1.0
-                value: _root.action.splitValue
                 stepSize: 0.05
+                decimals: Style.decimalsPrecise
+                value: _root.action.splitValue
 
                 onValueModified: (newValue) => {
                     _root.action.splitValue = newValue

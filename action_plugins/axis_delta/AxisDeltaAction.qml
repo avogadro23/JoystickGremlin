@@ -38,6 +38,7 @@ Item {
                 minValue: 0.0001
                 maxValue: 2.0
                 stepSize: 0.05
+                decimals: Style.decimalsPrecise
                 value: _root.action.changeThreshold
 
                 onValueModified: (newValue) => {

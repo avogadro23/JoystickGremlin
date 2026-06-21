@@ -253,8 +253,9 @@ Item {
 
                     minValue: -1.0
                     maxValue: 1.0
-                    value: _root.action.selectedPointCoord.x
                     stepSize: 0.05
+                    decimals: Style.decimalsPrecise
+                    value: _root.action.selectedPointCoord.x
 
                     onValueModified: (newValue) => {
                         _root.action.updateSelectedPoint(newValue, _coordY.value)
@@ -270,8 +271,9 @@ Item {
 
                     minValue: -1.0
                     maxValue: 1.0
-                    value: _root.action.selectedPointCoord.y
                     stepSize: 0.05
+                    decimals: Style.decimalsPrecise
+                    value: _root.action.selectedPointCoord.y
 
                     onValueModified: (newValue) => {
                         _root.action.updateSelectedPoint(_coordX.value, newValue)

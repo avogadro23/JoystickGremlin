@@ -9,6 +9,7 @@ import QtQuick.Window
 import Gremlin.ActionPlugins
 import Gremlin.Base
 import Gremlin.Compact as Compact
+import Gremlin.Style
 import Gremlin.Util
 
 
@@ -50,6 +51,7 @@ Item {
                     minValue: -1.0
                     maxValue: _upper.value
                     stepSize: 0.05
+                    decimals: Style.decimalsPrecise
                     value: active ? comparator.lowerLimit : 0.0
 
                     onValueModified: (newValue) => {
@@ -65,6 +67,7 @@ Item {
                     minValue: _lower.value
                     maxValue: 1.0
                     stepSize: 0.05
+                    decimals: Style.decimalsPrecise
                     value: active ? comparator.upperLimit : 0.0
 
                     onValueModified: (newValue) => {

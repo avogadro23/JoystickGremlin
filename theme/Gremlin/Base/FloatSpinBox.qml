@@ -22,7 +22,7 @@ Item {
 
     signal valueModified(real value)
 
-    implicitWidth: _textMetrics.boundingRect.width + (
+    implicitWidth: _textMetrics.boundingRect.width + 10 + (
         _loader.item ? _loader.item.leftPadding + _loader.item.rightPadding : 0)
     implicitHeight: _loader.implicitHeight
 
