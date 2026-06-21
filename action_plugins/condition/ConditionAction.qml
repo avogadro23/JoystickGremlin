@@ -290,7 +290,7 @@ Item {
 
                         onSelectionChanged: (vjoyId, inputType, inputId) => {
                             modelData.vjoyDeviceId = vjoyId
-                            modelData.vJoyInputType = inputType
+                            modelData.vjoyInputType = inputType
                             modelData.vjoyInputId = inputId
                         }
 
