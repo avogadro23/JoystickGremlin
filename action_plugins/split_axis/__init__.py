@@ -34,7 +34,7 @@ class SplitAxisFunctor(AbstractFunctor):
             properties: list[ActionProperty] = []
     ) -> None:
         if value.current < self.data.split_value:
-            value.current = util.linear_axis_value_interpolation(
+            value.current = -util.linear_axis_value_interpolation(
                 value.current,
                 -1.0,
                 self.data.split_value
