@@ -123,6 +123,19 @@ def test_script_manager(test_root_dir: pathlib.Path, subtests):
         assert not p.scripts.scripts
 
 
+def test_library_preserves_action_order(xml_dir: pathlib.Path) -> None:
+    gremlin.plugin_manager.PluginManager()
+
+    p = Profile()
+    p.from_xml(xml_dir / "profile_parent_before_child.xml")
+
+    root_id = uuid.UUID("ac905a47-9ad3-4b65-b702-fbae1d133609")
+    child_id = uuid.UUID("ac905a47-9ad3-4b65-b702-fbae1d133608")
+    action_ids = list(p.library._actions.keys())
+
+    assert action_ids.index(root_id) < action_ids.index(child_id)
+
+
 def test_device_database(xml_dir: pathlib.Path, subtests):
     database = profile.DeviceDatabase()
     with subtests.test("create database"):

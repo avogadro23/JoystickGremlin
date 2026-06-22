@@ -483,6 +483,16 @@ class Library:
                     )
                     break
 
+        # Restore action sequence as it appears in the file to maintain serialization
+        # consistency for change detection tests.
+        file_ids = [
+            safe_read(entry, "id", uuid.UUID)
+            for entry in node.findall("./library/action")
+        ]
+        self._actions = {
+            fid: self._actions[fid] for fid in file_ids if fid in self._actions
+        }
+
     def to_xml(self) -> ElementTree.Element:
         """Returns an XML node encoding the content of this library.
 

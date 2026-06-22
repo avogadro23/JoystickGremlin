@@ -1,0 +1,52 @@
+<profile version="14">
+    <settings>
+        <startup-mode>Default</startup-mode>
+        <macro-default-delay>0.05</macro-default-delay>
+    </settings>
+    <inputs>
+        <input>
+            <device-id>1ddcef70-0108-11f0-8004-444553540000</device-id>
+            <input-type>button</input-type>
+            <input-id>1</input-id>
+            <mode>Default</mode>
+            <action-configuration>
+                <root-action>ac905a47-9ad3-4b65-b702-fbae1d133609</root-action>
+                <behavior>button</behavior>
+            </action-configuration>
+        </input>
+    </inputs>
+    <library>
+        <action id="ac905a47-9ad3-4b65-b702-fbae1d133609" type="root">
+            <actions>
+                <action-id>ac905a47-9ad3-4b65-b702-fbae1d133608</action-id>
+            </actions>
+            <property type="string">
+                <name>action-label</name>
+                <value></value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>disallowed</value>
+            </property>
+        </action>
+        <action id="ac905a47-9ad3-4b65-b702-fbae1d133608" type="description">
+            <property type="string">
+                <name>description</name>
+                <value>Test</value>
+            </property>
+            <property type="string">
+                <name>action-label</name>
+                <value></value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>disallowed</value>
+            </property>
+        </action>
+    </library>
+    <modes>
+        <mode>Default</mode>
+    </modes>
+    <scripts/>
+    <devices/>
+</profile>
