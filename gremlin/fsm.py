@@ -6,6 +6,7 @@
 
 from collections.abc import Callable
 import logging
+import threading
 from typing import Any, Dict, List, Tuple
 
 
@@ -61,10 +62,12 @@ class FiniteStateMachine:
         self.current_state = start_state
         self.debug = debug
         self.identifier = identifier
+        self._lock = threading.Lock()
 
     def reset(self) -> None:
         """Resets the FSM to its initial start state."""
-        self.current_state = self.start_state
+        with self._lock:
+            self.current_state = self.start_state
 
     def set_state(self, state: str) -> None:
         """Sets the current state without performing a transition.
@@ -72,8 +75,9 @@ class FiniteStateMachine:
         Args:
             state: the state to put the FSM into
         """
-        if state in self.states:
-            self.current_state = state
+        with self._lock:
+            if state in self.states:
+                self.current_state = state
 
     def perform(self, action: str, *args: List[Any]) -> list[Any]:
         """Performs a state transition on the FSM.
@@ -84,22 +88,23 @@ class FiniteStateMachine:
         Returns:
             Result of executing the state transition callback(s).
         """
-        key = (self.current_state, action)
+        with self._lock:
+            key = (self.current_state, action)
 
-        # Ensure the validity of the transition.
-        assert(action in self.actions)
-        if key not in self.transitions:
-            logging.getLogger("system").exception(
-                f"Missing transition: {key}: {self.transitions.keys()}"
-            )
-        assert(key in self.transitions)
-        assert(self.transitions[key].new_state in self.states)
+            # Ensure the validity of the transition.
+            assert(action in self.actions)
+            if key not in self.transitions:
+                logging.getLogger("system").exception(
+                    f"Missing transition: {key}: {self.transitions.keys()}"
+                )
+            assert(key in self.transitions)
+            assert(self.transitions[key].new_state in self.states)
 
-        values = [cb(*args) for cb in self.transitions[key].callbacks]
-        if self.debug:
-            logging.getLogger("system").debug(
-                f"FSM ({self.identifier}): {self.current_state} -> " +
-                f"{self.transitions[key].new_state} ({action})"
-            )
-        self.current_state = self.transitions[key].new_state
-        return values
+            values = [cb(*args) for cb in self.transitions[key].callbacks]
+            if self.debug:
+                logging.getLogger("system").debug(
+                    f"FSM ({self.identifier}): {self.current_state} -> " +
+                    f"{self.transitions[key].new_state} ({action})"
+                )
+            self.current_state = self.transitions[key].new_state
+            return values
