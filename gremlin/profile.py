@@ -1330,8 +1330,14 @@ class ScriptManager:
 
     def from_xml(self, root: ElementTree.Element) -> None:
         for node in root.findall("./scripts/script"):
-            self._scripts.append(Script())
-            self._scripts[-1].from_xml(node)
+            try:
+                script_instance = Script()
+                script_instance.from_xml(node)
+                self._scripts.append(script_instance)
+            except error.GremlinError as e:
+                logging.getLogger("system").error(
+                    f"Failure to load a user script: {e}"
+                )
         self._scripts.sort(key=lambda s: (s.path, s.name))
 
     def to_xml(self) -> ElementTree.Element:
