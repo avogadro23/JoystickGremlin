@@ -1,5 +1,5 @@
 ---
-name: code-review
+name: gremlin-code-review
 description: >
   Perform expert code reviews of PySide6, QML, and Python code. Use this skill
   whenever a user asks for a review, audit, critique, or feedback on Python or
@@ -9,6 +9,14 @@ description: >
 ---
 
 Review the changes on this branch compared to `develop` using the instructions below.
+
+# DO
+- Explain why your presented solution is the right approach
+
+# DONT
+- Modify or remove files
+- Run git commands other than `git diff`
+- Apply linter or static code analysis fixes
 
 
 # QML & Python Qt Code Review Skill
