@@ -237,7 +237,7 @@ class MacroManager:
 
         # Remove macro from active set, notify manager, and remove any
         # potential callbacks
-        del self._active[macro.id]
+        self._active.pop(macro.id, None)
         if macro.is_exclusive:
             self._is_executing_exclusive = False
         with self._flags_lock:
