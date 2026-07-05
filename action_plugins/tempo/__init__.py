@@ -7,7 +7,6 @@ from __future__ import annotations
 import copy
 import logging
 import threading
-import time
 from typing import (
     override,
     List,
@@ -34,8 +33,7 @@ from gremlin.base_classes import (
     Value,
 )
 from gremlin.config import Configuration
-from gremlin.device_helpers import ButtonReleaseActions, ModeMatch
-from gremlin.mode_manager import ModeManager
+from gremlin.event_helpers import ButtonReleaseActions, ModeMatch
 from gremlin.profile import Library
 from gremlin.types import (
     ActionProperty,
@@ -57,7 +55,6 @@ class TempoFunctor(AbstractFunctor):
     def __init__(self, action: TempoData) -> None:
         super().__init__(action)
 
-        # self.start_time = 0
         self.timer = None
         self.value_press : Value = Value(None)
         self.event_press : event_handler.Event | None = None
@@ -82,24 +79,46 @@ class TempoFunctor(AbstractFunctor):
             self.value_press = copy.deepcopy(value)
             self.event_press = event.clone()
 
-            # Register a button release event to reset the FSM should the
-            # input be released in a different mode.
+            # React to button release events to perform a fallback release in
+            # case of invalid FSM state transitions due to action interactions.
             ButtonReleaseActions().register_callback(
-                lambda: self._reset_fsm_if_required(event.mode),
-                event,
-                ModeMatch.IgnoreMode
+                lambda release_event: self._release_cb(
+                    release_event, Value(False), properties
+                ),
+                event
             )
 
-        self.fsm.perform(
-            "press" if value.current else "release",
+        action = "press" if value.current else "release"
+        if self.fsm.try_perform(action, event, value, properties) is None:
+            self._reset_fsm(event, value, properties)
+
+    def _reset_fsm(
+        self,
+        event: event_handler.Event,
+        value: Value,
+        properties: List[ActionProperty]
+    ) -> None:
+        logging.getLogger("event").warning(
+            "Tempo: Resetting due to invalid FSM transition."
+        )
+        if self.timer:
+            self.timer.cancel()
+        self.fsm.reset()
+        self._process_event(
+            self.functors["short"] + self.functors["long"],
             event,
             value,
             properties
         )
 
-    def _reset_fsm_if_required(self, activating_mode: str) -> None:
-        if ModeManager().current.name != activating_mode:
-            self.fsm.reset()
+    def _release_cb(
+            self,
+            event: event_handler.Event,
+            value: Value,
+            properties: List[ActionProperty]
+    ) -> None:
+        if (self.fsm.current_state, "press") not in self.fsm.transitions:
+            self._reset_fsm(event, value, properties)
 
     def _create_fsm(self) -> fsm.FiniteStateMachine:
         T = fsm.Transition
@@ -167,7 +186,12 @@ class TempoFunctor(AbstractFunctor):
         )
 
     def _timeout(self) -> None:
-        self.fsm.perform("timeout", self.event_press, self.value_press, [])
+        if self.fsm.try_perform(
+            "timeout", self.event_press, self.value_press, []
+        ) is None:
+            logging.getLogger("event").warning(
+                "Tempo: Ignoring stale timeout for current FSM state."
+            )
 
 
 class TempoModel(ActionModel):
