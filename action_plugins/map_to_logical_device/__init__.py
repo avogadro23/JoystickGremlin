@@ -250,15 +250,17 @@ class MapToLogicalDeviceData(AbstractActionData):
 
         # Select an initially valid logical input
         logical = LogicalDevice()
+        input_type = behavior_type if behavior_type != InputType.Keyboard \
+            else InputType.JoystickButton
         try:
-            logical_input = logical.inputs_of_type([behavior_type])[0]
+            logical_input = logical.inputs_of_type([input_type])[0]
         except (GremlinError, IndexError):
-            logical.create(behavior_type)
-            logical_input = logical.inputs_of_type([behavior_type])[0]
+            logical.create(input_type)
+            logical_input = logical.inputs_of_type([input_type])[0]
 
         # Model variables
         self.logical_input_id = logical_input.id
-        self.logical_input_type = behavior_type
+        self.logical_input_type = input_type
         self.axis_mode = AxisMode.Absolute
         self.axis_scaling = 1.0
         self.button_inverted = False
