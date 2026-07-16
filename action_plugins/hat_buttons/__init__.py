@@ -51,23 +51,23 @@ if TYPE_CHECKING:
 class DirectionalButton:
     resolve_direction = {
         HatDirection.North: "North",
-        HatDirection.NorthEast: "North East",
+        HatDirection.NorthEast: "North-East",
         HatDirection.East: "East",
-        HatDirection.SouthEast: "South East",
+        HatDirection.SouthEast: "South-East",
         HatDirection.South: "South",
-        HatDirection.SouthWest: "South West",
+        HatDirection.SouthWest: "South-West",
         HatDirection.West: "West",
-        HatDirection.NorthWest: "North West",
+        HatDirection.NorthWest: "North-West",
         HatDirection.Center: "Center",
         "Center": HatDirection.Center,
         "North": HatDirection.North,
-        "North East": HatDirection.NorthEast,
+        "North-East": HatDirection.NorthEast,
         "East": HatDirection.East,
-        "South East": HatDirection.SouthEast,
+        "South-East": HatDirection.SouthEast,
         "South": HatDirection.South,
-        "South West": HatDirection.SouthWest,
+        "South-West": HatDirection.SouthWest,
         "West": HatDirection.West,
-        "North West": HatDirection.NorthWest,
+        "North-West": HatDirection.NorthWest,
     }
 
     def __init__(self, functors: Dict[str, List[Callable]], direction: str) -> None:
@@ -158,13 +158,13 @@ class HatButtonsModel(ActionModel):
         (4, 2): "South",
         (4, 3): "West",
         (8, 0): "North",
-        (8, 1): "North East",
+        (8, 1): "North-East",
         (8, 2): "East",
-        (8, 3): "South East",
+        (8, 3): "South-East",
         (8, 4): "South",
-        (8, 5): "South West",
+        (8, 5): "South-West",
         (8, 6): "West",
-        (8, 7): "North West",
+        (8, 7): "North-West",
     }
 
     def __init__(
@@ -231,13 +231,13 @@ class HatButtonsData(AbstractActionData):
         4: ["North", "East", "South", "West", "Center"],
         8: [
             "North",
-            "North East",
+            "North-East",
             "East",
-            "South East",
+            "South-East",
             "South",
-            "South West",
+            "South-West",
             "West",
-            "North West",
+            "North-West",
             "Center",
         ],
     }
