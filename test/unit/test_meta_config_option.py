@@ -2,25 +2,26 @@
 
 # SPDX-License-Identifier: GPL-3.0-only
 
-from collections.abc import Iterator
+from __future__ import annotations
+
 import logging
 import sys
+
 sys.path.append(".")
 
+
 import pytest
-from unittest import mock
 
 import gremlin.error
 import gremlin.types
-
-from gremlin.ui.option import BaseMetaConfigOptionWidget, MetaConfigOption
-
 from gremlin.common import SingletonMetaclass
-from gremlin.types import PropertyType
+from gremlin.ui.option import (
+    BaseMetaConfigOptionWidget,
+    MetaConfigOption,
+)
 
 
 class DummyWidget(BaseMetaConfigOptionWidget):
-
     def _qml_path(self) -> str:
         return "dummy.qml"
 
@@ -29,6 +30,7 @@ class DummyWidget(BaseMetaConfigOptionWidget):
 def option() -> MetaConfigOption:
     SingletonMetaclass._instances.pop(MetaConfigOption, None)
     return MetaConfigOption()
+
 
 def test_basic(option: MetaConfigOption) -> None:
     assert option.count() == 0
@@ -61,7 +63,9 @@ def test_empty_entries(option: MetaConfigOption) -> None:
     assert option.entries("some", "no such") == []
 
 
-def test_register_duplicate_logs_warning(option: MetaConfigOption, caplog) -> None:
+def test_register_duplicate_logs_warning(
+    option: MetaConfigOption, caplog: pytest.LogCaptureFixture
+) -> None:
     option.register("dup", "grp", "name", "desc", DummyWidget)
     option.register("dup", "grp", "name", "desc", DummyWidget)
 

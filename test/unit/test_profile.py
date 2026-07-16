@@ -2,36 +2,43 @@
 
 # SPDX-License-Identifier: GPL-3.0-only
 
+from __future__ import annotations
+
 import sys
 
 from gremlin import profile
+
 sys.path.append(".")
 
 import pathlib
-import pytest
 import tempfile
 import uuid
 from xml.etree import ElementTree
 
-import gremlin.plugin_manager
-from gremlin.config import Configuration
-from gremlin.types import AxisMode, InputType
-from gremlin import device_initialization, shared_state
-
-from gremlin.profile import Profile
-from test.unit.conftest import get_fake_device_guid
+import pytest
 
 # Ensure config entries are generated
-import action_plugins.tempo
+import gremlin.plugin_manager
+from gremlin import (
+    device_initialization,
+    shared_state,
+)
+from gremlin.config import Configuration
+from gremlin.profile import Profile
+from gremlin.types import (
+    AxisMode,
+    InputType,
+)
+from test.unit.conftest import get_fake_device_guid
 
 
-def test_constructor_invalid(xml_dir: pathlib.Path):
+def test_constructor_invalid(xml_dir: pathlib.Path) -> None:
     p = Profile()
     with pytest.raises(ValueError):
         p.from_xml(str(xml_dir / "profile_invalid.xml"))
 
 
-def test_simple_action(xml_dir: pathlib.Path):
+def test_simple_action(xml_dir: pathlib.Path) -> None:
     gremlin.plugin_manager.PluginManager()
 
     p = Profile()
@@ -62,10 +69,11 @@ def test_simple_action(xml_dir: pathlib.Path):
     assert actions[2].id == uuid.UUID("d67cbad2-da3f-4b59-b434-2d493e7e6185")
 
 
-def test_hierarchy(xml_dir: pathlib.Path):
+def test_hierarchy(xml_dir: pathlib.Path) -> None:
     gremlin.plugin_manager.PluginManager()
 
-    c = Configuration()
+    # Ensure the configuration is initialized properly.
+    Configuration()
     p = Profile()
     p.from_xml(str(xml_dir / "profile_hierarchy.xml"))
 
@@ -88,11 +96,18 @@ def test_hierarchy(xml_dir: pathlib.Path):
     assert n4.description == "Node 4"
 
 
-def test_mode_hierarchy(xml_dir: pathlib.Path):
+def test_mode_hierarchy(xml_dir: pathlib.Path) -> None:
     p = Profile()
     p.from_xml(str(xml_dir / "profile_mode_hierarchy.xml"))
 
-    assert p.modes.mode_names() == ["Child", "Deep", "Default", "Levels", "Separate", "Three"]
+    assert p.modes.mode_names() == [
+        "Child",
+        "Deep",
+        "Default",
+        "Levels",
+        "Separate",
+        "Three",
+    ]
     assert p.modes.first_mode == "Default"
 
     assert p.modes.find_mode("Levels").value == "Levels"
@@ -102,7 +117,7 @@ def test_mode_hierarchy(xml_dir: pathlib.Path):
     assert p.modes.find_mode("Default").parent == p.modes._hierarchy
 
 
-def test_script_manager(test_root_dir: pathlib.Path, subtests):
+def test_script_manager(test_root_dir: pathlib.Path, subtests: pytest.Subtests) -> None:
     # Mode is retrieved from shared state when loading user plugins.
     shared_state.current_profile = p = Profile()
     script_path = test_root_dir / "data" / "testing_script.py"
@@ -136,10 +151,12 @@ def test_library_preserves_action_order(xml_dir: pathlib.Path) -> None:
     assert action_ids.index(root_id) < action_ids.index(child_id)
 
 
-def test_device_database(xml_dir: pathlib.Path, subtests):
+def test_device_database(xml_dir: pathlib.Path, subtests: pytest.Subtests) -> None:
     database = profile.DeviceDatabase()
     with subtests.test("create database"):
-        uuids = [dev.device_guid.uuid for dev in device_initialization.physical_devices()]
+        uuids = [
+            dev.device_guid.uuid for dev in device_initialization.physical_devices()
+        ]
         database.update_for_uuids(uuids)
         assert len(database.devices) == len(uuids)
 

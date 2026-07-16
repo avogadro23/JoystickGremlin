@@ -2,27 +2,29 @@
 
 # SPDX-License-Identifier: GPL-3.0-only
 
+from __future__ import annotations
+
 import sys
 
 import action_plugins.condition.condition
-from gremlin import event_handler
+
 sys.path.append(".")
 
 import pathlib
-import pytest
 import uuid
-from xml.etree import ElementTree
 
-from gremlin.error import GremlinError
-from gremlin.event_handler import Event
-from gremlin.types import HatDirection, InputType, DataInsertionMode
+import pytest
 
-from gremlin.profile import Library, InputItem, InputItemBinding, Profile
-from action_plugins.condition import ConditionData, ConditionModel
-
-from action_plugins.root import RootData
-from action_plugins.description import DescriptionData
 import action_plugins.condition as condition
+from action_plugins.condition import ConditionData
+from action_plugins.description import DescriptionData
+from gremlin.error import GremlinError
+from gremlin.profile import Profile
+from gremlin.types import (
+    DataInsertionMode,
+    HatDirection,
+    InputType,
+)
 
 _PROFILE_SIMPLE = "action_condition_simple.xml"
 _PROFILE_COMPLEX = "action_condition_complex.xml"
@@ -47,7 +49,7 @@ def test_from_xml(xml_dir: pathlib.Path) -> None:
     assert isinstance(cond, action_plugins.condition.condition.JoystickCondition)
     assert isinstance(cond._comparator, condition.comparator.PressedComparator)
     assert cond._states[0].input_type == InputType.JoystickButton
-    assert cond._comparator.is_pressed == False
+    assert not cond._comparator.is_pressed
     assert cond.is_valid()
 
 
@@ -86,7 +88,7 @@ def test_from_xml_complex(xml_dir: pathlib.Path) -> None:
     assert isinstance(c1, action_plugins.condition.condition.JoystickCondition)
     assert isinstance(c1._comparator, condition.comparator.PressedComparator)
     assert c1._states[0].input_type == InputType.JoystickButton
-    assert c1._comparator.is_pressed == False
+    assert not c1._comparator.is_pressed
     assert c1.is_valid()
 
     c2 = a.conditions[1]
@@ -109,7 +111,7 @@ def test_from_xml_complex(xml_dir: pathlib.Path) -> None:
     c4 = a.conditions[3]
     assert isinstance(c4, action_plugins.condition.condition.KeyboardCondition)
     assert isinstance(c4._comparator, condition.comparator.PressedComparator)
-    assert c4._comparator.is_pressed == False
+    assert not c4._comparator.is_pressed
 
 
 def test_to_xml() -> None:
@@ -117,28 +119,25 @@ def test_to_xml() -> None:
 
     JoyCond = action_plugins.condition.condition.JoystickCondition
     cond = JoyCond()
-    state = JoyCond.State(
-        _INPUT_1_DEVICE_UUID,
-        InputType.JoystickButton,
-        37
-    )
+    state = JoyCond.State(_INPUT_1_DEVICE_UUID, InputType.JoystickButton, 37)
     cond._states = [state]
     cond._comparator = condition.comparator.PressedComparator(True)
     a.conditions.append(cond)
 
     node = a.to_xml()
-    assert node.find(
-            "./property/name[.='logical-operator']/../value"
-        ).text == "all"
-    assert node.find(
-            "./condition/property/name[.='condition-type']/../value"
-        ).text == "joystick"
-    assert node.find(
-            "./condition/input/property/name[.='input-type']/../value"
-        ).text == "button"
-    assert node.find(
-            "./condition/comparator/property/name[.='is-pressed']/../value"
-        ).text == "True"
+    assert node.find("./property/name[.='logical-operator']/../value").text == "all"
+    assert (
+        node.find("./condition/property/name[.='condition-type']/../value").text
+        == "joystick"
+    )
+    assert (
+        node.find("./condition/input/property/name[.='input-type']/../value").text
+        == "button"
+    )
+    assert (
+        node.find("./condition/comparator/property/name[.='is-pressed']/../value").text
+        == "True"
+    )
 
 
 def test_action_methods(xml_dir: pathlib.Path) -> None:
@@ -171,10 +170,10 @@ def test_ctor() -> None:
 
     assert len(a.conditions) == 0
     assert a.logical_operator == condition.LogicalOperator.All
-    assert a.is_valid() == True
+    assert a.is_valid()
 
 
-def test_swap_uuid(xml_dir: pathlib.Path):
+def test_swap_uuid(xml_dir: pathlib.Path) -> None:
     p = Profile()
     p.from_xml(str(xml_dir / _PROFILE_COMPLEX))
 

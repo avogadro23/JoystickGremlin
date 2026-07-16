@@ -6,24 +6,29 @@
 Integration tests with a profile that does simple input forwarding.
 """
 
-from collections.abc import Iterator
-import contextlib
+from __future__ import annotations
+
 import itertools
 import sys
 import threading
+from collections.abc import Iterator
 from unittest import mock
 
 sys.path.append(".")
 
 import pytest
 
-from action_plugins import map_to_vjoy
 import dill
-from gremlin import types
-from gremlin import util
+from action_plugins import map_to_vjoy
+from gremlin import (
+    types,
+    util,
+)
 from test.integration import app_tester
-from vjoy import vjoy
-from vjoy import vjoy_interface
+from vjoy import (
+    vjoy,
+    vjoy_interface,
+)
 
 
 @pytest.fixture
@@ -72,12 +77,12 @@ class TestSimpleProfile:
     )
     def test_axis_sequential(
         self,
-        subtests,
+        subtests: pytest.Subtests,
         tester: app_tester.GremlinAppTester,
         vjoy_control_device: vjoy.VJoy,
         vjoy_di_device: dill.DeviceSummary,
         di_input: int,
-    ):
+    ) -> None:
         """Applies groups of sequential inputs."""
         self._test_axis(
             subtests,
@@ -112,12 +117,12 @@ class TestSimpleProfile:
     )
     def test_axis_large_steps(
         self,
-        subtests,
+        subtests: pytest.Subtests,
         tester: app_tester.GremlinAppTester,
         vjoy_control_device: vjoy.VJoy,
         vjoy_di_device: dill.DeviceSummary,
         di_input: int,
-    ):
+    ) -> None:
         """Applies fixed sequence of inputs with large steps."""
         self._test_axis(
             subtests,
@@ -129,12 +134,12 @@ class TestSimpleProfile:
 
     def _test_axis(
         self,
-        subtests,
+        subtests: pytest.Subtests,
         tester: app_tester.GremlinAppTester,
         vjoy_control_device: vjoy.VJoy,
         vjoy_di_device: dill.DeviceSummary,
         di_input: int,
-    ):
+    ) -> None:
         input_axis_id = 1
         output_axis_id = 3
         calibrated_value = util.with_default_center_calibration(di_input)
@@ -157,24 +162,26 @@ class TestSimpleProfile:
 
     def test_axis_relative(
         self,
-        subtests,
+        subtests: pytest.Subtests,
         patched_time: threading.Semaphore,
         tester: app_tester.GremlinAppTester,
         vjoy_control_device: vjoy.VJoy,
         vjoy_di_device: dill.DeviceSummary,
-    ):
+    ) -> None:
         """Verifies relative axis changes over time."""
         input_axis_id = 2
         output_axis_id = 4
         sleep_calls_per_subtest = 10
-        # The thread updating output axis values takes one step before we can pause it with
-        # our semaphore, hence the +1 in the values below.
+        # The thread updating output axis values takes one step before we can
+        # pause it with our semaphore, hence the +1 in the values below.
         for di_input, steps in [
             (tester.AXIS_MAX_INT, [11, 21, 31]),
             (-tester.AXIS_MAX_INT, [21, 11, 1, -9, -19, -29]),
         ]:
             calibrated_value = util.with_default_center_calibration(di_input)
-            vjoy_control_device.axis(linear_index=input_axis_id).value = calibrated_value
+            vjoy_control_device.axis(
+                linear_index=input_axis_id
+            ).value = calibrated_value
             with subtests.test("input readback"):
                 tester.assert_axis_eventually_equals(
                     vjoy_di_device.device_guid, input_axis_id, di_input
@@ -219,7 +226,7 @@ class TestSimpleProfile:
         di_input: bool,
         vjoy_output: int,
         cached_value: bool | None,
-    ):
+    ) -> None:
         input_button_id = 1
         output_button_id = 3
         vjoy_control_device.button(index=input_button_id).is_pressed = di_input
@@ -259,7 +266,7 @@ class TestSimpleProfile:
         di_input: types.HatDirection,
         vjoy_output: int,
         cached_value: types.HatDirection | None,
-    ):
+    ) -> None:
         input_hat_id = 1
         output_hat_id = 3
         vjoy_control_device.hat(index=input_hat_id).direction = di_input
@@ -292,7 +299,7 @@ class TestSimpleProfile:
         di_input: int,
         vjoy_output: int,
         cached_value: types.HatDirection | None,
-    ):
+    ) -> None:
         """Tests the scenario where the input device has non-enum hat values."""
         input_hat_id = 1
         output_hat_id = 3
@@ -301,7 +308,8 @@ class TestSimpleProfile:
             != vjoy.HatType.Continuous
         ):
             pytest.skip(
-                "Skipping analog hat values test - vJoy device needs to be configured as such."
+                "Skipping analog hat values test - vJoy device needs to be "
+                "configured as such."
             )
         # Use the vJoy device directly to set a non-enum continuous value.
         vjoy_interface.VJoyInterface.SetContPov(

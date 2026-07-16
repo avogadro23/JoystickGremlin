@@ -2,47 +2,57 @@
 
 # SPDX-License-Identifier: GPL-3.0-only
 
+from __future__ import annotations
+
 import sys
+
 sys.path.append(".")
 
 import pathlib
-import pytest
 import uuid
 from xml.etree import ElementTree
 
-from gremlin.error import GremlinError
-from gremlin.profile import Library, InputItem, InputItemBinding, Profile
-from gremlin.ui.profile import InputItemBindingModel
-from gremlin.ui.action_model import SequenceIndex
+import pytest
 
-from action_plugins.description import DescriptionData, DescriptionModel
+from action_plugins.description import (
+    DescriptionData,
+    DescriptionModel,
+)
 from action_plugins.root import RootData
+from gremlin.error import GremlinError
+from gremlin.profile import (
+    InputItem,
+    InputItemBinding,
+    Library,
+    Profile,
+)
+from gremlin.ui.action_model import SequenceIndex
+from gremlin.ui.profile import InputItemBindingModel
 
 _ACTION_DESCRIPTION_SIMPLE = "action_description_simple.xml"
 
 
 @pytest.fixture(scope="session", autouse=True)
-def terminate_event_listener(request):
+def terminate_event_listener(request: pytest.FixtureRequest) -> None:
     import gremlin.event_handler
-    request.addfinalizer(
-        lambda: gremlin.event_handler.EventListener().terminate()
-    )
+
+    request.addfinalizer(lambda: gremlin.event_handler.EventListener().terminate())
 
 
-def test_model_ctor():
+def test_model_ctor() -> None:
     a = DescriptionData()
 
     assert a.description == ""
 
 
-def test_actions(xml_dir: pathlib.Path):
-    l = Library()
+def test_actions(xml_dir: pathlib.Path) -> None:
+    library = Library()
     a = DescriptionData()
     a.from_xml(
         ElementTree.fromstring(
             (xml_dir / _ACTION_DESCRIPTION_SIMPLE).read_text(),
         ),
-        l,
+        library,
     )
 
     assert len(a.get_actions()[0]) == 0
@@ -53,7 +63,7 @@ def test_actions(xml_dir: pathlib.Path):
         a.remove_action(0, "something")
 
 
-def test_model_setter_getter():
+def test_model_setter_getter() -> None:
     p = Profile()
     ii = InputItem(p.library)
     iib = InputItemBinding(ii)
@@ -61,11 +71,7 @@ def test_model_setter_getter():
     iibm = InputItemBindingModel(iib)
     a = DescriptionData()
     m = DescriptionModel(
-        a,
-        iibm,
-        SequenceIndex(None, None, 0),
-        SequenceIndex(None, None,  1),
-        None
+        a, iibm, SequenceIndex(None, None, 0), SequenceIndex(None, None, 1), None
     )
 
     assert a.description == ""
@@ -78,21 +84,21 @@ def test_model_setter_getter():
     assert m.description == "Test 123"
 
 
-def test_model_from_xml(xml_dir: pathlib.Path):
-    l = Library()
+def test_model_from_xml(xml_dir: pathlib.Path) -> None:
+    library = Library()
     a = DescriptionData()
     a.from_xml(
         ElementTree.fromstring(
             (xml_dir / _ACTION_DESCRIPTION_SIMPLE).read_text(),
         ),
-        l,
+        library,
     )
 
     assert a.description == "This is a test"
     assert a._id == uuid.UUID("ac905a47-9ad3-4b65-b702-fbae1d133609")
 
 
-def test_model_to_xml():
+def test_model_to_xml() -> None:
     p = Profile()
     ii = InputItem(p.library)
     iib = InputItemBinding(ii)
@@ -100,11 +106,7 @@ def test_model_to_xml():
     iibm = InputItemBindingModel(iib)
     a = DescriptionData()
     m = DescriptionModel(
-        a,
-        iibm,
-        SequenceIndex(None, None, 0),
-        SequenceIndex(None, None,  1),
-        None
+        a, iibm, SequenceIndex(None, None, 0), SequenceIndex(None, None, 1), None
     )
 
     m.description = "Test"

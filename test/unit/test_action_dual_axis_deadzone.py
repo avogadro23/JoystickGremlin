@@ -2,10 +2,18 @@
 
 # SPDX-License-Identifier: GPL-3.0-only
 
+from __future__ import annotations
+
 import pathlib
 import uuid
+
+import pytest
+
+from action_plugins import (
+    dual_axis_deadzone,
+    map_to_vjoy,
+)
 from gremlin.profile import Profile
-from action_plugins import dual_axis_deadzone, map_to_vjoy
 
 _PROFILE = "action_dual_axis_deadzone.xml"
 _ACTION_UUID = uuid.UUID("20465c1e-afb3-49f9-9e43-1d7087f0e8ce")
@@ -13,7 +21,7 @@ _INPUT_1_DEVICE_UUID = uuid.UUID("97b77b40-07d8-11f0-8028-444553540000")
 _INPUT_2_DEVICE_UUID = uuid.UUID("97b77b40-07d8-11f0-8028-444553540001")
 
 
-def test_from_xml(subtests, xml_dir: pathlib.Path):
+def test_from_xml(subtests: pytest.Subtests, xml_dir: pathlib.Path) -> None:
     p = Profile()
     p.from_xml(str(xml_dir / _PROFILE))
 
@@ -40,7 +48,7 @@ def test_from_xml(subtests, xml_dir: pathlib.Path):
         assert a.output2_actions[0].vjoy_input_id == 2
 
 
-def test_swap_uuid(xml_dir: pathlib.Path):
+def test_swap_uuid(xml_dir: pathlib.Path) -> None:
     p = Profile()
     p.from_xml(str(xml_dir / _PROFILE))
 

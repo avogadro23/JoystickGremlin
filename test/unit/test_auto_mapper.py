@@ -2,12 +2,20 @@
 
 # SPDX-License-Identifier: GPL-3.0-only
 
+from __future__ import annotations
+
 import pathlib
 
 import pytest
 
 import dill
-from gremlin import auto_mapper, device_initialization, profile, shared_state, types
+from gremlin import (
+    auto_mapper,
+    device_initialization,
+    profile,
+    shared_state,
+    types,
+)
 
 _PROFILE_DEVICE_AXIS_COUNT = 4
 _PROFILE_DEVICE_BUTTON_COUNT = 6
@@ -51,8 +59,10 @@ def register_profile_device() -> dill.DeviceSummary:
 
 
 def test_get_used_vjoy_inputs_from_profile(
-    subtests, xml_dir: pathlib.Path, register_profile_device: dill.DeviceSummary
-):
+    subtests: pytest.Subtests,
+    xml_dir: pathlib.Path,
+    register_profile_device: dill.DeviceSummary,
+) -> None:
     p = profile.Profile()
     p.from_xml(str(xml_dir / "profile_auto_mapper.xml"))
     shared_state.current_profile = p
@@ -89,7 +99,7 @@ def test_get_used_vjoy_inputs_from_profile(
 
 def test_get_used_vjoy_inputs_from_empty_mode(
     xml_dir: pathlib.Path, register_profile_device: dill.DeviceSummary
-):
+) -> None:
     p = profile.Profile()
     p.from_xml(str(xml_dir / "profile_auto_mapper.xml"))
     shared_state.current_profile = p
@@ -101,8 +111,10 @@ def test_get_used_vjoy_inputs_from_empty_mode(
 
 
 def test_get_unused_vjoy_inputs(
-    subtests, xml_dir: pathlib.Path, register_profile_device: dill.DeviceSummary
-):
+    subtests: pytest.Subtests,
+    xml_dir: pathlib.Path,
+    register_profile_device: dill.DeviceSummary,
+) -> None:
     p = profile.Profile()
     p.from_xml(str(xml_dir / "profile_auto_mapper.xml"))
     shared_state.current_profile = p
@@ -153,7 +165,9 @@ def test_get_unused_vjoy_inputs(
 
 
 # Intentionally not using the register_profile_device fixture in this test.
-def test_get_used_vjoy_inputs_for_disconnected_device_in_profile(xml_dir: pathlib.Path):
+def test_get_used_vjoy_inputs_for_disconnected_device_in_profile(
+    xml_dir: pathlib.Path,
+) -> None:
     p = profile.Profile()
     p.from_xml(str(xml_dir / "profile_auto_mapper.xml"))
     shared_state.current_profile = p
@@ -165,8 +179,10 @@ def test_get_used_vjoy_inputs_for_disconnected_device_in_profile(xml_dir: pathli
 
 
 def test_iter_physical_inputs_exclude_used(
-    subtests, xml_dir: pathlib.Path, register_profile_device: dill.DeviceSummary
-):
+    subtests: pytest.Subtests,
+    xml_dir: pathlib.Path,
+    register_profile_device: dill.DeviceSummary,
+) -> None:
     p = profile.Profile()
     p.from_xml(str(xml_dir / "profile_auto_mapper.xml"))
     shared_state.current_profile = p
@@ -206,8 +222,10 @@ def test_iter_physical_inputs_exclude_used(
 
 
 def test_iter_physical_inputs_overwrite_used(
-    subtests, xml_dir: pathlib.Path, register_profile_device: dill.DeviceSummary
-):
+    subtests: pytest.Subtests,
+    xml_dir: pathlib.Path,
+    register_profile_device: dill.DeviceSummary,
+) -> None:
     p = profile.Profile()
     p.from_xml(str(xml_dir / "profile_auto_mapper.xml"))
     shared_state.current_profile = p
@@ -258,8 +276,10 @@ def test_iter_physical_inputs_overwrite_used(
 
 
 def test_iter_physical_inputs_for_new_device(
-    subtests, xml_dir: pathlib.Path, register_profile_device: dill.DeviceSummary
-):
+    subtests: pytest.Subtests,
+    xml_dir: pathlib.Path,
+    register_profile_device: dill.DeviceSummary,
+) -> None:
     p = profile.Profile()
     p.from_xml(str(xml_dir / "profile_auto_mapper.xml"))
     shared_state.current_profile = p
@@ -308,8 +328,10 @@ def test_iter_physical_inputs_for_new_device(
 
 
 def test_iter_physical_inputs_for_empty_mode(
-    subtests, xml_dir: pathlib.Path, register_profile_device: dill.DeviceSummary
-):
+    subtests: pytest.Subtests,
+    xml_dir: pathlib.Path,
+    register_profile_device: dill.DeviceSummary,
+) -> None:
     p = profile.Profile()
     p.from_xml(str(xml_dir / "profile_auto_mapper.xml"))
     shared_state.current_profile = p
@@ -359,21 +381,31 @@ def test_iter_physical_inputs_for_empty_mode(
             assert hat.input_id == hat_i + 1
 
 
-def test_auto_map(subtests, xml_dir: pathlib.Path, register_profile_device: dill.DeviceSummary):
+def test_auto_map(
+    subtests: pytest.Subtests,
+    xml_dir: pathlib.Path,
+    register_profile_device: dill.DeviceSummary,
+) -> None:
     p = profile.Profile()
     p.from_xml(str(xml_dir / "profile_auto_mapper.xml"))
     shared_state.current_profile = p
 
     mapper = auto_mapper.AutoMapper(p)
     with subtests.test("default profile"):
-        assert mapper.generate_mappings(
+        assert (
+            mapper.generate_mappings(
                 [register_profile_device.device_guid],
                 [1],
                 auto_mapper.AutoMapperOptions(),
-        ) == "Created 2 mappings, retained 9 previous bindings."
+            )
+            == "Created 2 mappings, retained 9 previous bindings."
+        )
     with subtests.test("EmptyMode"):
-        assert mapper.generate_mappings(
+        assert (
+            mapper.generate_mappings(
                 [register_profile_device.device_guid],
                 [1],
                 auto_mapper.AutoMapperOptions(mode="EmptyMode"),
-        ) == "Created 13 mappings, retained 0 previous bindings."
+            )
+            == "Created 13 mappings, retained 0 previous bindings."
+        )

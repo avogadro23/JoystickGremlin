@@ -2,18 +2,21 @@
 
 # SPDX-License-Identifier: GPL-3.0-only
 
+from __future__ import annotations
+
 import sys
+
 sys.path.append(".")
 
-from collections.abc import Iterator
 import tempfile
-import pytest
+from collections.abc import Iterator
 from unittest import mock
+
+import pytest
 
 import gremlin.config
 import gremlin.error
 import gremlin.types
-
 from gremlin.common import SingletonMetaclass
 from gremlin.types import PropertyType
 
@@ -27,17 +30,13 @@ def cfg() -> Iterator[gremlin.config.Configuration]:
     # restored when the fixutre is torn down.
     original_path = gremlin.config._config_file_path
     SingletonMetaclass._instances.pop(gremlin.config.Configuration, None)
-    with mock.patch.object(
-        gremlin.config, "_config_file_path", tempfile.mkstemp()[1]
-    ):
+    with mock.patch.object(gremlin.config, "_config_file_path", tempfile.mkstemp()[1]):
         try:
             yield gremlin.config.Configuration()
         finally:
             # Restore original config file path and delete singleton instance.
             gremlin.config._config_file_path = original_path
-            SingletonMetaclass._instances.pop(
-                gremlin.config.Configuration, None
-            )
+            SingletonMetaclass._instances.pop(gremlin.config.Configuration, None)
 
 
 def test_simple(cfg: gremlin.config.Configuration) -> None:
@@ -53,14 +52,14 @@ def test_simple(cfg: gremlin.config.Configuration) -> None:
         {},
     )
     assert cfg.value("test", "case", "1") == 42
-    assert cfg.value("test", "case", "2") == False
+    assert not cfg.value("test", "case", "2")
     assert cfg.value("test", "case", "3") == gremlin.types.HatDirection.NorthEast
 
     cfg.set("test", "case", "1", 37)
     cfg.set("test", "case", "2", True)
     cfg.set("test", "case", "3", gremlin.types.HatDirection.SouthWest)
     assert cfg.value("test", "case", "1") == 37
-    assert cfg.value("test", "case", "2") == True
+    assert cfg.value("test", "case", "2")
     assert cfg.value("test", "case", "3") == gremlin.types.HatDirection.SouthWest
 
 
@@ -81,43 +80,39 @@ def test_load_save(cfg: gremlin.config.Configuration) -> None:
     cfg.register("test", "case", "4", PropertyType.List, [1, 2, 3, 4, 5], "", {})
     assert cfg.value("test", "case", "1") == 42
     assert cfg.description("test", "case", "1") == "one"
-    assert cfg.expose("test", "case", "1") == False
+    assert not cfg.expose("test", "case", "1")
 
-    assert cfg.value("test", "case", "2") == False
+    assert not cfg.value("test", "case", "2")
     assert cfg.description("test", "case", "2") == "two"
-    assert cfg.expose("test", "case", "2") == True
+    assert cfg.expose("test", "case", "2")
 
     assert cfg.value("test", "case", "3") == gremlin.types.HatDirection.NorthEast
     assert cfg.description("test", "case", "3") == ""
-    assert cfg.expose("test", "case", "3") == False
+    assert not cfg.expose("test", "case", "3")
 
     assert cfg.value("test", "case", "4") == [1, 2, 3, 4, 5]
     assert cfg.description("test", "case", "4") == ""
-    assert cfg.expose("test", "case", "4") == False
+    assert not cfg.expose("test", "case", "4")
 
     cfg.save()
-    with mock.patch.object(
-        cfg, cfg._should_skip_reload.__name__, return_value=False
-    ):
+    with mock.patch.object(cfg, cfg._should_skip_reload.__name__, return_value=False):
         cfg.load()
 
     assert cfg.value("test", "case", "1") == 42
-    assert cfg.expose("test", "case", "1") == False
+    assert not cfg.expose("test", "case", "1")
 
-    assert cfg.value("test", "case", "2") == False
-    assert cfg.expose("test", "case", "2") == True
+    assert not cfg.value("test", "case", "2")
+    assert cfg.expose("test", "case", "2")
 
     assert cfg.value("test", "case", "3") == gremlin.types.HatDirection.NorthEast
-    assert cfg.expose("test", "case", "3") == False
+    assert not cfg.expose("test", "case", "3")
 
     assert cfg.value("test", "case", "4") == [1, 2, 3, 4, 5]
-    assert cfg.expose("test", "case", "4") == False
+    assert not cfg.expose("test", "case", "4")
 
 
 def test_exceptions(cfg: gremlin.config.Configuration) -> None:
-    cfg.register(
-        "test", "case", "1", PropertyType.Int, 42, "", {"min": 1, "max": 20}
-    )
+    cfg.register("test", "case", "1", PropertyType.Int, 42, "", {"min": 1, "max": 20})
     with pytest.raises(gremlin.error.GremlinError):
         cfg.set("test", "case", "1", 3.14)
 

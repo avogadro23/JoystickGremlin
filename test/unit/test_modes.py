@@ -2,31 +2,35 @@
 
 # SPDX-License-Identifier: GPL-3.0-only
 
+from __future__ import annotations
+
 import sys
+
 sys.path.append(".")
 
 import pathlib
-import pytest
 import uuid
-from xml.etree import ElementTree
 
+import pytest
+
+import gremlin.mode_manager
 import gremlin.plugin_manager
 import gremlin.shared_state
 from gremlin.config import Configuration
 from gremlin.error import GremlinError
-import gremlin.mode_manager
-from gremlin.mode_manager import Mode, ModeManager
-from gremlin.types import AxisMode, InputType
-
-from gremlin.profile import Profile, ModeHierarchy
-
-import action_plugins.tempo as tempo
+from gremlin.mode_manager import (
+    Mode,
+    ModeManager,
+)
+from gremlin.profile import (
+    ModeHierarchy,
+    Profile,
+)
 
 _PROFILE_REALISTIC = "profile_realistic.xml"
 
 
 class TestModeHierarchy:
-
     def test_ctor(self) -> None:
         p = Profile()
         mh = ModeHierarchy(p)
@@ -53,8 +57,8 @@ class TestModeHierarchy:
         with pytest.raises(GremlinError):
             mh.find_mode("not there")
 
-        assert mh.mode_exists("Second") == True
-        assert mh.mode_exists("Other") == False
+        assert mh.mode_exists("Second")
+        assert not mh.mode_exists("Other")
 
     def test_delete(self) -> None:
         p = Profile()
@@ -115,7 +119,6 @@ class TestModeHierarchy:
 
 
 class TestModeManager:
-
     def test_cycling(self) -> None:
         p = Profile()
         gremlin.shared_state.current_profile = p
