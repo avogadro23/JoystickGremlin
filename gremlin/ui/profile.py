@@ -309,6 +309,10 @@ class InputItemBindingModel(QtCore.QObject):
         self._create_action_models()
 
     def _create_action_models(self) -> None:
+        # Disconnect stale models so they stop reacting to behaviorChanged
+        for model in self._action_models.values():
+            model.dispose()
+
         # Reset storage
         self._action_models = {}
         self._index_lookup = {}
@@ -616,15 +620,21 @@ class InputItemBindingModel(QtCore.QObject):
                         self._input_item_binding.virtual_button
                     )
 
-            # Update input type of all actions
-            for model in self._action_models.values():
-                model.action_data.set_behavior_type(behavior)
+            # Remove all actions when the behavior changes.
+            root_action = self.root_action
+            children, selectors = root_action.get_actions()
+            for i in range(len(children) - 1, -1, -1):
+                root_action.remove_action(i, selectors[i])
+            for child in children:
+                self._input_item_binding.library.remove_unused(child, recursive=True)
+
+            # Tree topology changed, so the model cache needs rebuilding
+            self._create_action_models()
 
             # Force full redraw of the action
             self.behaviorChanged.emit()
             self.rootActionChanged.emit()
-            # This one might be overkill
-            signal.reloadUi.emit()
+            signal.reloadCurrentInputItem.emit()
 
     @property
     def behavior_type(self) -> None:

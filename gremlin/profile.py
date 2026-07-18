@@ -314,23 +314,15 @@ class Library:
         # If the action occurs in another action we can abort any further
         # processing
         for entry in self._actions.values():
-            if action in entry.get_actions():
+            if action in entry.get_actions()[0]:
                 return
 
-        # Build a list of all actions linked to the provided action and then
-        # attempt to remove them one after the other
-        if recursive:
-            all_actions = [action]
-            index = 0
-            while index < len(all_actions):
-                all_actions.extend(all_actions[index].get_actions())
-                index += 1
-            all_actions.pop(0)
-
-            for entry in reversed(all_actions):
-                self.remove_unused(entry, True)
-
+        # Delete before recursing, else children see this as still referenced
+        children = action.get_actions()[0] if recursive else []
         del self._actions[action.id]
+
+        for child in children:
+            self.remove_unused(child, True)
 
     def actions_by_type(
         self, action_type: type[AbstractActionData]

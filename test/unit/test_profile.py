@@ -38,6 +38,33 @@ def test_constructor_invalid(xml_dir: pathlib.Path) -> None:
         p.from_xml(str(xml_dir / "profile_invalid.xml"))
 
 
+def test_library_remove_unused_recursive() -> None:
+    from action_plugins.root import RootData
+
+    library = profile.Library()
+
+    top = RootData()
+    middle = RootData()
+    leaf = RootData()
+
+    top.children.append(middle)
+    middle.children.append(leaf)
+
+    library.add_action(top)
+    library.add_action(middle)
+    library.add_action(leaf)
+
+    # Detach the subtree from whatever referenced it, mirroring what a
+    # caller must do before asking the library to garbage collect it.
+    top.children.remove(middle)
+
+    library.remove_unused(middle, recursive=True)
+
+    assert not library.has_action(middle.id)
+    assert not library.has_action(leaf.id)
+    assert library.has_action(top.id)
+
+
 def test_simple_action(xml_dir: pathlib.Path) -> None:
     gremlin.plugin_manager.PluginManager()
 

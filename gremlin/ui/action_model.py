@@ -91,7 +91,15 @@ class ActionModel(QtCore.QObject):
         self._sequence_index = action_index
         self._parent_sequence_index = parent_index
 
-        self._binding_model.behaviorChanged.connect(lambda: self.actionChanged.emit())
+        self._behavior_changed_connection = self._binding_model.behaviorChanged.connect(
+            lambda: self.actionChanged.emit()
+        )
+
+    def dispose(self) -> None:
+        """Disconnects from the binding model before being discarded."""
+        self._binding_model.behaviorChanged.disconnect(
+            self._behavior_changed_connection
+        )
 
     def _qml_path_impl(self) -> str:
         raise MissingImplementationError(
