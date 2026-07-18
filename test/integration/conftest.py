@@ -167,6 +167,7 @@ def vjoy_ids_or_skip() -> list[int]:
 @pytest.fixture(scope="module", autouse=True)
 def _activate_gremlin(edited_profile_path: str) -> Iterator[None]:
     """Activates Gremlin."""
+    assert gremlin.event_handler.EventListener()._running
     backend = gremlin.ui.backend.Backend()
     backend.loadProfile(edited_profile_path)
     backend.activate_gremlin(True)
@@ -180,6 +181,22 @@ def tear_down() -> Iterator[None]:
     """Performs package-level teardown for integration tests."""
     yield
     vjoy.VJoyProxy.reset()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _terminate_event_listener_and_monitor(
+    request: pytest.FixtureRequest,
+) -> None:
+    """Terminates session-wide singletons once, after the entire run."""
+
+    # EventListener/Backend set up their DILL callback and process-monitor
+    # thread once per session with nothing to restart them; must not
+    # terminate them mid-session, only here.
+    def _finalize() -> None:
+        gremlin.event_handler.EventListener().terminate()
+        gremlin.ui.backend.Backend().process_monitor.stop()
+
+    request.addfinalizer(_finalize)
 
 
 # +-------------------------------------------------------------------------
@@ -196,6 +213,3 @@ def tester(
     cfg.set("global", "general", "refresh-axis-on-mode-change", False)
     cfg.set("global", "general", "refresh-axis-on-activation", False)
     yield gremlin_app
-    gremlin.event_handler.EventListener().terminate()
-    backend = gremlin.ui.backend.Backend()
-    backend.process_monitor.stop()
