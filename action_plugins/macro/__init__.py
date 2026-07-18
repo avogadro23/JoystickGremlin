@@ -564,6 +564,7 @@ class MacroFunctor(AbstractFunctor):
         for action in self.data.actions:
             self.macro.add_action(action)
         self.macro.is_exclusive = self.data.is_exclusive
+        self.macro.is_preempting = self.data.is_preemptive
         match self.data.repeat_mode:
             case MacroRepeatModes.Count:
                 self.macro.repeat = macro.CountRepeat(
@@ -869,6 +870,14 @@ class MacroModel(ActionModel):
             self._data.is_exclusive = state
             self.changed.emit()
 
+    def _get_is_preemptive(self) -> bool:
+        return self._data.is_preemptive
+
+    def _set_is_preemptive(self, state: bool) -> None:
+        if state != self._data.is_preemptive:
+            self._data.is_preemptive = state
+            self.changed.emit()
+
     actions = QtCore.Property(
         QtCore.QObject,
         fget=lambda self: self._action_list_model,
@@ -889,6 +898,10 @@ class MacroModel(ActionModel):
 
     isExclusive = QtCore.Property(
         bool, fget=_get_is_exclusive, fset=_set_is_exclusive, notify=changed
+    )
+
+    isPreemptive = QtCore.Property(
+        bool, fget=_get_is_preemptive, fset=_set_is_preemptive, notify=changed
     )
 
     isRecording = QtCore.Property(
@@ -954,6 +967,7 @@ class MacroData(AbstractActionData):
         # Model variables
         self.actions = []
         self.is_exclusive = False
+        self.is_preemptive = False
         self.repeat_mode = MacroRepeatModes.Single
         self.repeat_data = MacroRepeatData()
 
@@ -970,6 +984,9 @@ class MacroData(AbstractActionData):
         }
         self._id = util.read_action_id(node)
         self.is_exclusive = util.read_property(node, "is-exclusive", PropertyType.Bool)
+        self.is_preemptive = util.read_property(
+            node, "is-preemptive", PropertyType.Bool
+        )
         self.repeat_mode = MacroRepeatModes.lookup(
             util.read_property(node, "repeat-mode", PropertyType.String)
         )
@@ -1000,6 +1017,7 @@ class MacroData(AbstractActionData):
             node,
             [
                 ["is-exclusive", self.is_exclusive, PropertyType.Bool],
+                ["is-preemptive", self.is_preemptive, PropertyType.Bool],
                 ["repeat-mode", self.repeat_mode.name, PropertyType.String],
                 ["repeat-count", self.repeat_data.count, PropertyType.Int],
                 ["repeat-delay", self.repeat_data.delay, PropertyType.Float],

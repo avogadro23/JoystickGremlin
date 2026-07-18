@@ -90,6 +90,15 @@ Item {
                 checked: _root.action.isExclusive
                 onClicked: () => { _root.action.isExclusive = checked }
             }
+
+            Switch {
+                text: "Pre-Emptive"
+
+                visible: _root.action.isExclusive
+                checked: _root.action.isPreemptive
+                onClicked: () => { _root.action.isPreemptive = checked }
+            }
+
         }
 
         // Action recording configuration settings.
