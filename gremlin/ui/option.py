@@ -218,9 +218,9 @@ class ConfigEntryModel(QtCore.QAbstractListModel):
         if self.roles[role] == "value":
             key = [self._section_name, self._group_name, entries[index.row()]]
             if self._config.data_type(*key) == PropertyType.Path:
-                path_value = Path(value)
+                value = Path(value)
 
-            self._config.set(*key, path_value)
+            self._config.set(*key, value)
             self.dataChanged.emit(index, index, {role})
             # Enable other UI elements to react to configuration changes.
             signal.configChanged.emit()
