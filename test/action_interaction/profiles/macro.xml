@@ -41,6 +41,26 @@
                 <behavior>hat</behavior>
             </action-configuration>
         </input>
+        <input>
+            <device-id>f0af472f-8e17-493b-a1eb-7333ee8543f2</device-id>
+            <input-type>button</input-type>
+            <mode>Default</mode>
+            <input-id>4</input-id>
+            <action-configuration>
+                <root-action>9b0624c2-dcf5-4084-9310-99a9b7183bec</root-action>
+                <behavior>button</behavior>
+            </action-configuration>
+        </input>
+        <input>
+            <device-id>f0af472f-8e17-493b-a1eb-7333ee8543f2</device-id>
+            <input-type>hat</input-type>
+            <mode>Default</mode>
+            <input-id>2</input-id>
+            <action-configuration>
+                <root-action>9c79889c-749d-480d-93e9-4205299e697e</root-action>
+                <behavior>hat</behavior>
+            </action-configuration>
+        </input>
     </inputs>
     <settings>
         <startup-mode>Default</startup-mode>
@@ -172,6 +192,10 @@
         <action id="340f514d-bac6-47da-8005-6d31454ddbcf" type="macro">
             <property type="bool">
                 <name>is-exclusive</name>
+                <value>False</value>
+            </property>
+            <property type="bool">
+                <name>is-preemptive</name>
                 <value>False</value>
             </property>
             <property type="string">
@@ -327,6 +351,10 @@
                 <name>is-exclusive</name>
                 <value>False</value>
             </property>
+            <property type="bool">
+                <name>is-preemptive</name>
+                <value>False</value>
+            </property>
             <property type="string">
                 <name>repeat-mode</name>
                 <value>Count</value>
@@ -433,6 +461,10 @@
                 <name>is-exclusive</name>
                 <value>False</value>
             </property>
+            <property type="bool">
+                <name>is-preemptive</name>
+                <value>False</value>
+            </property>
             <property type="string">
                 <name>repeat-mode</name>
                 <value>Single</value>
@@ -475,6 +507,10 @@
         <action id="415e6e88-0be7-4ef5-b972-c927849b3fb0" type="macro">
             <property type="bool">
                 <name>is-exclusive</name>
+                <value>False</value>
+            </property>
+            <property type="bool">
+                <name>is-preemptive</name>
                 <value>False</value>
             </property>
             <property type="string">
@@ -521,6 +557,10 @@
                 <name>is-exclusive</name>
                 <value>False</value>
             </property>
+            <property type="bool">
+                <name>is-preemptive</name>
+                <value>False</value>
+            </property>
             <property type="string">
                 <name>repeat-mode</name>
                 <value>Toggle</value>
@@ -565,6 +605,10 @@
                 <name>is-exclusive</name>
                 <value>False</value>
             </property>
+            <property type="bool">
+                <name>is-preemptive</name>
+                <value>False</value>
+            </property>
             <property type="string">
                 <name>repeat-mode</name>
                 <value>Hold</value>
@@ -607,6 +651,10 @@
         <action id="7289a8c6-ea12-42cf-9199-16841e4ee15e" type="macro">
             <property type="bool">
                 <name>is-exclusive</name>
+                <value>False</value>
+            </property>
+            <property type="bool">
+                <name>is-preemptive</name>
                 <value>False</value>
             </property>
             <property type="string">
@@ -700,6 +748,228 @@
         <action id="6227700f-eda5-4771-896d-6a3c1a44794d" type="root">
             <actions>
                 <action-id>0422ac6e-aab5-423e-a4a1-0d4ae16a9bf8</action-id>
+            </actions>
+            <property type="string">
+                <name>action-label</name>
+                <value>Root</value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>disallowed</value>
+            </property>
+        </action>
+        <action id="4c1bcae6-8d09-4370-9ce7-a07e24bd37d4" type="macro">
+            <property type="bool">
+                <name>is-exclusive</name>
+                <value>False</value>
+            </property>
+            <property type="bool">
+                <name>is-preemptive</name>
+                <value>False</value>
+            </property>
+            <property type="string">
+                <name>repeat-mode</name>
+                <value>Hold</value>
+            </property>
+            <property type="int">
+                <name>repeat-count</name>
+                <value>1</value>
+            </property>
+            <property type="float">
+                <name>repeat-delay</name>
+                <value>0.1</value>
+            </property>
+            <macro-action type="logical-device">
+                <property type="input_type">
+                    <name>input-type</name>
+                    <value>axis</value>
+                </property>
+                <property type="int">
+                    <name>input-id</name>
+                    <value>12</value>
+                </property>
+                <property type="float">
+                    <name>value</name>
+                    <value>0.1</value>
+                </property>
+                <property type="axis_mode">
+                    <name>axis-mode</name>
+                    <value>relative</value>
+                </property>
+            </macro-action>
+            <property type="string">
+                <name>action-label</name>
+                <value>Interruptible Hold Macro</value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>press</value>
+            </property>
+        </action>
+        <action id="9b0624c2-dcf5-4084-9310-99a9b7183bec" type="root">
+            <actions>
+                <action-id>4c1bcae6-8d09-4370-9ce7-a07e24bd37d4</action-id>
+            </actions>
+            <property type="string">
+                <name>action-label</name>
+                <value>Root</value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>disallowed</value>
+            </property>
+        </action>
+        <action id="408d2dca-dda6-4d05-a7a5-ef7fc718bd3d" type="macro">
+            <property type="bool">
+                <name>is-exclusive</name>
+                <value>True</value>
+            </property>
+            <property type="bool">
+                <name>is-preemptive</name>
+                <value>True</value>
+            </property>
+            <property type="string">
+                <name>repeat-mode</name>
+                <value>Single</value>
+            </property>
+            <property type="int">
+                <name>repeat-count</name>
+                <value>1</value>
+            </property>
+            <property type="float">
+                <name>repeat-delay</name>
+                <value>0.1</value>
+            </property>
+            <macro-action type="logical-device">
+                <property type="input_type">
+                    <name>input-type</name>
+                    <value>button</value>
+                </property>
+                <property type="int">
+                    <name>input-id</name>
+                    <value>13</value>
+                </property>
+                <property type="bool">
+                    <name>value</name>
+                    <value>True</value>
+                </property>
+            </macro-action>
+            <macro-action type="pause">
+                <property type="float">
+                    <name>duration</name>
+                    <value>0.3</value>
+                </property>
+            </macro-action>
+            <macro-action type="logical-device">
+                <property type="input_type">
+                    <name>input-type</name>
+                    <value>button</value>
+                </property>
+                <property type="int">
+                    <name>input-id</name>
+                    <value>13</value>
+                </property>
+                <property type="bool">
+                    <name>value</name>
+                    <value>False</value>
+                </property>
+            </macro-action>
+            <property type="string">
+                <name>action-label</name>
+                <value>Preemptive Exclusive Macro</value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>press</value>
+            </property>
+        </action>
+        <action id="6bf009b0-0d76-48a6-9dbc-4847a82a1824" type="macro">
+            <property type="bool">
+                <name>is-exclusive</name>
+                <value>True</value>
+            </property>
+            <property type="bool">
+                <name>is-preemptive</name>
+                <value>False</value>
+            </property>
+            <property type="string">
+                <name>repeat-mode</name>
+                <value>Single</value>
+            </property>
+            <property type="int">
+                <name>repeat-count</name>
+                <value>1</value>
+            </property>
+            <property type="float">
+                <name>repeat-delay</name>
+                <value>0.1</value>
+            </property>
+            <macro-action type="logical-device">
+                <property type="input_type">
+                    <name>input-type</name>
+                    <value>button</value>
+                </property>
+                <property type="int">
+                    <name>input-id</name>
+                    <value>14</value>
+                </property>
+                <property type="bool">
+                    <name>value</name>
+                    <value>True</value>
+                </property>
+            </macro-action>
+            <macro-action type="pause">
+                <property type="float">
+                    <name>duration</name>
+                    <value>0.1</value>
+                </property>
+            </macro-action>
+            <macro-action type="logical-device">
+                <property type="input_type">
+                    <name>input-type</name>
+                    <value>button</value>
+                </property>
+                <property type="int">
+                    <name>input-id</name>
+                    <value>14</value>
+                </property>
+                <property type="bool">
+                    <name>value</name>
+                    <value>False</value>
+                </property>
+            </macro-action>
+            <property type="string">
+                <name>action-label</name>
+                <value>Non-Preemptive Exclusive Macro</value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>press</value>
+            </property>
+        </action>
+        <action id="96c207f1-6723-4bea-b83b-89fc8830a3a4" type="hat-buttons">
+            <property type="int">
+                <name>button-count</name>
+                <value>4</value>
+            </property>
+            <North>
+                <action-id>408d2dca-dda6-4d05-a7a5-ef7fc718bd3d</action-id>
+            </North>
+            <East>
+                <action-id>6bf009b0-0d76-48a6-9dbc-4847a82a1824</action-id>
+            </East>
+            <property type="string">
+                <name>action-label</name>
+                <value>Hat as Buttons</value>
+            </property>
+            <property type="activation-mode">
+                <name>activation-mode</name>
+                <value>disallowed</value>
+            </property>
+        </action>
+        <action id="9c79889c-749d-480d-93e9-4205299e697e" type="root">
+            <actions>
+                <action-id>96c207f1-6723-4bea-b83b-89fc8830a3a4</action-id>
             </actions>
             <property type="string">
                 <name>action-label</name>

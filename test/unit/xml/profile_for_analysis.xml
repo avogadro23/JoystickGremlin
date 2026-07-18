@@ -111,6 +111,10 @@
                 <name>is-exclusive</name>
                 <value>False</value>
             </property>
+            <property type="bool">
+                <name>is-preemptive</name>
+                <value>False</value>
+            </property>
             <property type="string">
                 <name>repeat-mode</name>
                 <value>Single</value>

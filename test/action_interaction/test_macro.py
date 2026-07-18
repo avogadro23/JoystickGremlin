@@ -145,6 +145,79 @@ def test_hat_toggle(jgbot: JoystickGremlinBot, profile_dir: Path) -> None:
         jgbot.next_event()
 
 
+def test_preemptive_exclusive_pauses_and_resumes_macro(
+    jgbot: JoystickGremlinBot, profile_dir: Path
+) -> None:
+    jgbot.load_profile(profile_dir / "macro.xml")
+    MacroManager().default_delay = 0.0
+
+    # Start a continuously repeating, non-exclusive macro.
+    jgbot.press_button(inout.IN_BUTTON_4)
+    assert (
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.1) == jgbot.next_event()
+    )
+
+    # Trigger a preemptive, exclusive macro while the previous one is still
+    # running. It must dispatch immediately rather than being queued behind it.
+    jgbot.set_hat_direction(inout.IN_HAT_2, HatDirection.North)
+    assert (
+        EventSpec(InputType.JoystickButton, inout.OUT_BUTTON_3, True)
+        == jgbot.next_event()
+    )
+
+    # While the preemptive macro is still executing (it pauses for 0.3s
+    # between its two actions), the interrupted macro must produce no further
+    # events even though its own repeat delay (0.1s) has already elapsed.
+    jgbot.wait(0.15)
+    assert jgbot.event_count() == 0
+
+    # Once the preemptive macro finishes, the interrupted macro must resume.
+    assert (
+        EventSpec(InputType.JoystickButton, inout.OUT_BUTTON_3, False)
+        == jgbot.next_event()
+    )
+    assert (
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.1) == jgbot.next_event()
+    )
+
+    jgbot.release_button(inout.IN_BUTTON_4)
+
+
+def test_non_preemptive_exclusive_waits_for_running_macro(
+    jgbot: JoystickGremlinBot, profile_dir: Path
+) -> None:
+    jgbot.load_profile(profile_dir / "macro.xml")
+    MacroManager().default_delay = 0.0
+
+    # Start a continuously repeating, non-exclusive macro.
+    jgbot.press_button(inout.IN_BUTTON_4)
+    assert (
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.1) == jgbot.next_event()
+    )
+
+    # Trigger a non-preemptive exclusive macro. Unlike the preemptive case, it
+    # must wait for the running macro to finish rather than interrupting it.
+    jgbot.set_hat_direction(inout.IN_HAT_2, HatDirection.East)
+    jgbot.wait(0.25)
+    assert (
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.1) == jgbot.next_event()
+    )
+    assert (
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.1) == jgbot.next_event()
+    )
+
+    # Terminate the running macro, allowing the exclusive one to dispatch.
+    jgbot.release_button(inout.IN_BUTTON_4)
+    assert (
+        EventSpec(InputType.JoystickButton, inout.OUT_BUTTON_4, True)
+        == jgbot.next_event()
+    )
+    assert (
+        EventSpec(InputType.JoystickButton, inout.OUT_BUTTON_4, False)
+        == jgbot.next_event()
+    )
+
+
 def test_hat_hold(jgbot: JoystickGremlinBot, profile_dir: Path) -> None:
     jgbot.load_profile(profile_dir / "macro.xml")
     MacroManager().default_delay = 0.05

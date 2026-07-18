@@ -265,6 +265,10 @@
                 <name>is-exclusive</name>
                 <value>False</value>
             </property>
+            <property type="bool">
+                <name>is-preemptive</name>
+                <value>False</value>
+            </property>
             <property type="string">
                 <name>repeat-mode</name>
                 <value>Single</value>
@@ -303,6 +307,10 @@
         <action id="a723de89-c59e-46bb-a5f6-eed8421a7bf2" type="macro">
             <property type="bool">
                 <name>is-exclusive</name>
+                <value>False</value>
+            </property>
+            <property type="bool">
+                <name>is-preemptive</name>
                 <value>False</value>
             </property>
             <property type="string">
@@ -559,6 +567,10 @@
         <action id="f884884d-2b75-4101-a72b-9544c81afe86" type="macro">
             <property type="bool">
                 <name>is-exclusive</name>
+                <value>False</value>
+            </property>
+            <property type="bool">
+                <name>is-preemptive</name>
                 <value>False</value>
             </property>
             <property type="string">
