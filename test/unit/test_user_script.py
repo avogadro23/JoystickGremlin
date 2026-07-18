@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
+import logging
 import pathlib
+import time
 import uuid
 
 import pytest
@@ -424,3 +426,75 @@ class TestScript:
         new_device_uuid = uuid.uuid4()
         assert script_for_test.swap_uuid(existing_device_uuid, new_device_uuid)
         assert var.value[0] == new_device_uuid
+
+
+class TestPeriodicRegistry:
+    def test_periodic_decorator_injects_vjoy_plugin(self) -> None:
+        received = []
+
+        @user_script.periodic(0.01)
+        def print_vjoy(vjoy: object) -> None:
+            received.append(vjoy)
+
+        user_script.periodic_registry.start()
+        time.sleep(0.1)
+        user_script.periodic_registry.stop()
+        user_script.periodic_registry.clear()
+
+        assert all(v is user_script.VJoyPlugin.vjoy for v in received)
+        assert 9 <= len(received) <= 11
+
+    def test_periodic_callback_exception_is_logged_and_does_not_stop_other_callbacks(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        working_calls = []
+
+        @user_script.periodic(0.01)
+        def raises() -> None:
+            raise ValueError("boom")
+
+        @user_script.periodic(0.01)
+        def works() -> None:
+            working_calls.append(True)
+
+        with caplog.at_level(logging.ERROR, logger="system"):
+            user_script.periodic_registry.start()
+            time.sleep(0.1)
+            user_script.periodic_registry.stop()
+        user_script.periodic_registry.clear()
+
+        assert len(working_calls) > 1
+        assert any(
+            r.name == "system"
+            and r.getMessage() == "Periodic callback raised an exception: boom"
+            for r in caplog.records
+        )
+
+    def test_periodic_reload_replaces_instead_of_duplicating(
+        self, tmp_path: pathlib.Path
+    ) -> None:
+        script_file = tmp_path / "reload_example.py"
+        script_file.write_text(
+            "call_log = []\n"
+            "\n"
+            "from gremlin import user_script\n"
+            "\n"
+            "\n"
+            "@user_script.periodic(0.01)\n"
+            "def tick() -> None:\n"
+            "    call_log.append(True)\n"
+        )
+
+        script = user_script.Script(script_file)
+        script.reload()
+        script.reload()
+
+        user_script.periodic_registry.start()
+        time.sleep(0.1)
+        user_script.periodic_registry.stop()
+        user_script.periodic_registry.clear()
+
+        # 3 registrations (1 initial load + 2 reloads) firing independently
+        # would land around 30 calls in this window; a single, replaced
+        # registration lands around 10.
+        assert 8 <= len(script.module.call_log) <= 12

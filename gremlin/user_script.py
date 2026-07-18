@@ -51,11 +51,20 @@ from vjoy.vjoy import VJoyProxy
 
 
 def _resolve_path(script_path: Path) -> Path:
-    """If script_path is relative, resolve (not strictly) it to the
-    standard scripts directory."""
+    """If script_path is relative, resolve (not strictly) it to the standard
+    scripts directory."""
     if script_path.is_absolute():
         return script_path
     return Path(util.resource_path("user_scripts")) / script_path
+
+
+def _current_script_id() -> uuid.UUID | None:
+    """Returns the id of the Script currently executing, if any."""
+    for frame in inspect.stack():
+        identifier = frame.frame.f_locals.get("_script_id", None)
+        if isinstance(identifier, uuid.UUID):
+            return identifier
+    return None
 
 
 class CallbackRegistry:
@@ -106,6 +115,7 @@ class PeriodicRegistry:
     def __init__(self) -> None:
         """Creates a new instance."""
         self._registry = {}
+        self._registry_lock = threading.Lock()
         self._running = False
         self._thread = threading.Thread(target=self._thread_loop)
         self._queue = []
@@ -137,11 +147,15 @@ class PeriodicRegistry:
             callback: the function to execute
             interval: the time in seconds between executions
         """
-        self._registry[callback] = (interval, callback)
+        script_id = _current_script_id()
+        key = (script_id, callback.__name__) if script_id is not None else callback
+        with self._registry_lock:
+            self._registry[key] = (interval, callback)
 
     def clear(self) -> None:
         """Clears the registry."""
-        self._registry = {}
+        with self._registry_lock:
+            self._registry = {}
 
     def _install_plugins(self, callback: Callable) -> Callable:
         """Installs the current plugins into the given callback.
@@ -165,31 +179,38 @@ class PeriodicRegistry:
         """Main execution loop run in a separate thread."""
         # Setup plugins to use
         self._plugins = [JoystickPlugin(), VJoyPlugin(), KeyboardPlugin()]
-        callback_map = {}
+        callback_interval = {}
 
-        # Populate the queue
+        # Populate the queue, adding an index to each callback to tie break
+        # entries with identical execution times.
         self._queue = []
-        for item in self._registry.values():
-            plugin_cb = self._install_plugins(item[1])
-            callback_map[plugin_cb] = item[0]
-            heapq.heappush(
-                self._queue, (time.time() + callback_map[plugin_cb], plugin_cb)
-            )
+        with self._registry_lock:
+            for index, item in enumerate(self._registry.values()):
+                plugin_cb = self._install_plugins(item[1])
+                callback_interval[plugin_cb] = item[0]
+                heapq.heappush(
+                    self._queue, (time.monotonic() + item[0], index, plugin_cb)
+                )
 
-        # Main thread loop
         while self._running:
-            # Process all events that require running
-            while self._queue[0][0] < time.time():
-                item = heapq.heappop(self._queue)
-                item[1]()
+            # Capture the current timestamp for reuse in the sleep down below.
+            while self._queue[0][0] < (now := time.monotonic()):
+                deadline, index, callback = heapq.heappop(self._queue)
+                try:
+                    callback()
+                except Exception as e:
+                    logging.getLogger("system").exception(
+                        f"Periodic callback raised an exception: {e}"
+                    )
 
                 heapq.heappush(
-                    self._queue, (time.time() + callback_map[item[1]], item[1])
+                    self._queue,
+                    (deadline + callback_interval[callback], index, callback),
                 )
 
             # Sleep until either the next function needs to be run or
             # our timeout expires
-            time.sleep(min(self._queue[0][0] - time.time(), 1.0))
+            time.sleep(min(self._queue[0][0] - now, 1.0))
 
 
 callback_registry = CallbackRegistry()
@@ -523,12 +544,7 @@ class Script:
         return node
 
     def reload(self) -> None:
-        """Reloads this script.
-
-        Calling reload will currently register duplicate callbacks in the
-        periodic registry. The workaround is to clear all periodic callbacks
-        and then reload all scripts.
-        """
+        """Reloads this script."""
         Script.variable_registry.register_script(self)
         self.module._script_id = self.id
         self.spec.loader.exec_module(self.module)
@@ -620,15 +636,8 @@ class AbstractVariable(ABC):
     def _assign_value_from(self, other: AbstractVariable) -> None:
         pass
 
-    def _get_script_id(self) -> uuid.UUID | None:
-        for frame in inspect.stack():
-            identifier = frame.frame.f_locals.get("_script_id", None)
-            if isinstance(identifier, uuid.UUID):
-                return identifier
-        return None
-
     def _initialize_from_registry(self) -> None:
-        idx = self._get_script_id()
+        idx = _current_script_id()
         var = Script.variable_registry.get(idx, self.name)
         if isinstance(var, AbstractVariable):
             self._assign_value_from(var)
