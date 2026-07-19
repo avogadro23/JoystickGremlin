@@ -635,16 +635,23 @@ class LogicalDeviceAction(AbstractAction):
         ]
         # Update the state of the logical device and then emit the corresponding
         # event to trigger further processing.
+        value = None
         match self.input_type:
             case InputType.JoystickAxis:
                 if self.axis_mode == AxisMode.Absolute:
                     ld.update(self.value)
                 elif self.axis_mode == AxisMode.Relative:
                     ld.update(max(-1.0, min(1.0, ld.value + self.value)))
+                value = ld.value
             case InputType.JoystickButton:
                 ld.update(self.value)
             case InputType.JoystickHat:
                 ld.update(self.value)
+                value = ld.direction
+
+        is_pressed = (
+            ld.is_pressed if self.input_type == InputType.JoystickButton else None
+        )
 
         self._event_listener.joystick_event.emit(
             event_handler.Event(
@@ -652,9 +659,9 @@ class LogicalDeviceAction(AbstractAction):
                 identifier=self.input_id,
                 device_guid=LogicalDevice.device_guid,
                 mode=self._mode_manager.current.name,
-                value=self.value,
-                is_pressed=self.value is True,
-                raw_value=self.value,
+                value=value,
+                is_pressed=is_pressed,
+                raw_value=value,
             )
         )
 
