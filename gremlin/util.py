@@ -574,6 +574,7 @@ def read_property(
     action_node: ElementTree.Element,
     name: str,
     property_type: PropertyType | list[PropertyType],
+    default_value: Any | None = None,  # noqa: ANN401
 ) -> Any:  # noqa: ANN401
     """Returns the value of the property with the given name.
 
@@ -581,6 +582,7 @@ def read_property(
         action_node: element from which to extract the property value
         name: name of the property element to return the value of
         property_type: valid PropertyType or list of valid types of the value
+        default_value: default value to return in case the property is not present
 
     Returns:
         The value of the property element of the given name
@@ -588,9 +590,11 @@ def read_property(
     # Retrieve the individual elements
     if isinstance(property_type, PropertyType):
         property_type = [property_type]
-    return _process_property(
-        action_node.find(f"./property/name[.='{name}']/.."), name, property_type
-    )
+    property_node = action_node.find(f"./property/name[.='{name}']/..")
+    if property_node is None and default_value is not None:
+        return default_value
+    else:
+        return _process_property(property_node, name, property_type)
 
 
 def read_properties(
@@ -616,7 +620,9 @@ def read_properties(
 
 
 def _process_property(
-    property_node: ElementTree.Element, name: str, property_types: list[PropertyType]
+    property_node: ElementTree.Element | None,
+    name: str,
+    property_types: list[PropertyType],
 ) -> Any:  # noqa: ANN401
     """Processes a single XML node corresponding to a specific property.
 

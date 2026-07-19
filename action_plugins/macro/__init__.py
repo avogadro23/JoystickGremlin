@@ -985,7 +985,7 @@ class MacroData(AbstractActionData):
         self._id = util.read_action_id(node)
         self.is_exclusive = util.read_property(node, "is-exclusive", PropertyType.Bool)
         self.is_preemptive = util.read_property(
-            node, "is-preemptive", PropertyType.Bool
+            node, "is-preemptive", PropertyType.Bool, False
         )
         self.repeat_mode = MacroRepeatModes.lookup(
             util.read_property(node, "repeat-mode", PropertyType.String)
