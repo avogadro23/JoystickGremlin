@@ -92,7 +92,7 @@ class EventSpec:
             return False
         match self.event_type:
             case InputType.JoystickAxis:
-                return self.expected_value == event.value
+                return  self.expected_value == pytest.approx(event.value)
             case InputType.JoystickButton:
                 return self.expected_value == event.is_pressed
             case InputType.JoystickHat:

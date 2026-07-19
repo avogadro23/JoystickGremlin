@@ -96,7 +96,8 @@ def test_hat_single(jgbot: JoystickGremlinBot, profile_dir: Path) -> None:
     jgbot.set_hat_direction(inout.IN_HAT_1, HatDirection.North)
     jgbot.wait(0.05)
     assert (
-        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_1, 0.05) == jgbot.next_event()
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_1, 0.17)
+        == jgbot.next_event()
     )
     assert jgbot.axis(inout.OUT_AXIS_1) == pytest.approx(0.17, abs=0.01)
 
@@ -110,11 +111,13 @@ def test_hat_count(jgbot: JoystickGremlinBot, profile_dir: Path) -> None:
     jgbot.set_hat_direction(inout.IN_HAT_1, HatDirection.East)
 
     assert (
-        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_1, 0.10) == jgbot.next_event()
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_1, -0.05)
+        == jgbot.next_event()
     )
     assert jgbot.axis(inout.OUT_AXIS_1) == pytest.approx(-0.05, abs=0.01)
     assert (
-        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_1, 0.10) == jgbot.next_event()
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_1, 0.05)
+        == jgbot.next_event()
     )
     assert jgbot.axis(inout.OUT_AXIS_1) == pytest.approx(0.05, abs=0.01)
 
@@ -133,7 +136,7 @@ def test_hat_toggle(jgbot: JoystickGremlinBot, profile_dir: Path) -> None:
     for _ in range(4):
         expected_value += 0.1
         assert (
-            EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_1, 0.1)
+            EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_1, expected_value)
             == jgbot.next_event()
         )
 
@@ -177,7 +180,7 @@ def test_preemptive_exclusive_pauses_and_resumes_macro(
         == jgbot.next_event()
     )
     assert (
-        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.1) == jgbot.next_event()
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.2) == jgbot.next_event()
     )
 
     jgbot.release_button(inout.IN_BUTTON_4)
@@ -200,10 +203,12 @@ def test_non_preemptive_exclusive_waits_for_running_macro(
     jgbot.set_hat_direction(inout.IN_HAT_2, HatDirection.East)
     jgbot.wait(0.25)
     assert (
-        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.1) == jgbot.next_event()
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.2)
+        == jgbot.next_event()
     )
     assert (
-        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.1) == jgbot.next_event()
+        EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_2, 0.3)
+        == jgbot.next_event()
     )
 
     # Terminate the running macro, allowing the exclusive one to dispatch.
@@ -231,7 +236,7 @@ def test_hat_hold(jgbot: JoystickGremlinBot, profile_dir: Path) -> None:
     for _ in range(4):
         expected_value += 0.1
         assert (
-            EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_1, 0.1)
+            EventSpec(InputType.JoystickAxis, inout.OUT_AXIS_1, expected_value)
             == jgbot.next_event()
         )
         assert jgbot.axis(inout.OUT_AXIS_1) == pytest.approx(expected_value, abs=0.01)
