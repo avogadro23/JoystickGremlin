@@ -15,6 +15,7 @@ from PySide6 import (
     QtGui,
 )
 
+import dill
 import gremlin.ui.type_aliases as ta
 from gremlin import (
     device_helpers,
@@ -159,6 +160,10 @@ class InputListenerModel(QtCore.QObject):
         Args:
             event: the input event to process
         """
+        # Ignore events from non-physical devices.
+        if event.device_guid in (dill.UUID_LogicalDevice, dill.UUID_Virtual):
+            return
+
         # Only react to events we're interested in.
         if event.event_type not in self._event_types:
             return
@@ -367,6 +372,10 @@ class MacroRecorder:
 
     def _record_event(self, event: event_handler.Event) -> None:
         if not self._is_recording or event.event_type not in self._valid_event_types:
+            return
+
+        # Ignore events from non-physical devices.
+        if event.device_guid in (dill.UUID_LogicalDevice, dill.UUID_Virtual):
             return
 
         # Check if the event corressponds to an axis that has a significant
