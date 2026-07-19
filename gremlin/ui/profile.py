@@ -805,51 +805,50 @@ class ModeHierarchyModel(QtCore.QObject):
     def __init__(self, parent: ta.OQO = None) -> None:
         super().__init__(parent)
 
-        self._modes = shared_state.current_profile.modes
-        signal.profileChanged.connect(self._reset)
+        signal.profileChanged.connect(self.modesChanged.emit)
 
-    def _reset(self) -> None:
-        self._modes = shared_state.current_profile.modes
-        self.modesChanged.emit()
+    @property
+    def current_modes(self) -> gremlin.profile.ModeHierarchy:
+        return shared_state.current_profile.modes
 
     @QtCore.Slot(str)
     def newMode(self, name: str) -> None:
-        if not self._modes.mode_exists(name):
-            self._modes.add_mode(name)
+        if not self.current_modes.mode_exists(name):
+            self.current_modes.add_mode(name)
             self.modesChanged.emit()
             signal.modesChanged.emit()
 
     @QtCore.Slot(str, str)
     def renameMode(self, old_name: str, new_name: str) -> None:
         if old_name != new_name and new_name not in self.modeStringList():
-            self._modes.rename_mode(old_name, new_name)
+            self.current_modes.rename_mode(old_name, new_name)
             self.modesChanged.emit()
             signal.modesChanged.emit()
 
     @QtCore.Slot(str)
     def deleteMode(self, name: str) -> None:
-        self._modes.delete_mode(name)
+        self.current_modes.delete_mode(name)
         self.modesChanged.emit()
         signal.modesChanged.emit()
 
     @QtCore.Slot(str, str)
     def setParent(self, mode_name: str, parent_name: str) -> None:
-        node = self._modes.find_mode(mode_name)
+        node = self.current_modes.find_mode(mode_name)
         if parent_name != node.parent.value:
-            self._modes.set_parent(mode_name, parent_name)
+            self.current_modes.set_parent(mode_name, parent_name)
             self.modesChanged.emit()
             signal.modesChanged.emit()
 
     @QtCore.Slot(str, result=list)
     def validParents(self, name: str) -> list[dict[str, str]]:
         options = [{"value": ""}]
-        for entry in self._modes.valid_parents(name):
+        for entry in self.current_modes.valid_parents(name):
             options.append({"value": entry})
         return options
 
     @QtCore.Slot(result=list)
     def modeStringList(self) -> list[str]:
-        return self._modes.mode_names()
+        return self.current_modes.mode_names()
 
 
 @ta.QmlElement
