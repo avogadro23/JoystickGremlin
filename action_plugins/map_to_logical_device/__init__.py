@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import threading
+import time
 from typing import (
     TYPE_CHECKING,
     List,
@@ -46,10 +48,20 @@ if TYPE_CHECKING:
 
 
 class MapToLogicalDeviceFunctor(AbstractFunctor):
+    SCALING_MULTIPLIER = 1 / 1000.0
+    THREAD_SLEEP_DURATION_S = 0.01
+
     def __init__(self, instance: MapToLogicalDeviceData) -> None:
         super().__init__(instance)
         self._logical = LogicalDevice()
         self._event_listener = event_handler.EventListener()
+
+        self.thread_running = False
+        self.should_stop_thread = False
+        self.thread_last_update = time.time()
+        self.thread = None
+        self.axis_delta_value = 0.0
+        self.axis_value = 0.0
 
     @override
     def __call__(
@@ -70,23 +82,37 @@ class MapToLogicalDeviceFunctor(AbstractFunctor):
         # internal state.
         is_pressed = None
         input_value = None
-        match input.type:
-            case InputType.JoystickAxis:
+        if input.type == InputType.JoystickAxis:
+            if self.data.axis_mode == AxisMode.Absolute:
                 input_value = value.current
                 input.update(input_value)
-            case InputType.JoystickButton:
-                is_pressed = value.current
-                if self.data.button_inverted:
-                    is_pressed = not is_pressed
-                input.update(is_pressed)
+            else:
+                self.should_stop_thread = abs(event.value) < 0.05
+                self.axis_delta_value = value.current * (
+                    self.data.axis_scaling * self.SCALING_MULTIPLIER
+                )
+                self.thread_last_update = time.time()
+                if self.thread_running is False:
+                    if isinstance(self.thread, threading.Thread):
+                        self.thread.join()
+                    self.thread = threading.Thread(target=self.relative_axis_thread)
+                    self.thread.start()
+                # Don't emit an event in relative mode.
+                return
 
-                if is_pressed and ActionProperty.DisableAutoRelease not in properties:
-                    event_helpers.ButtonReleaseActions().register_logical_button_release(
-                        input.id, event, self.data.button_inverted
-                    )
-            case InputType.JoystickHat:
-                input_value = value.current
-                input.update(input_value)
+        elif input.type == InputType.JoystickButton:
+            is_pressed = value.current
+            if self.data.button_inverted:
+                is_pressed = not is_pressed
+            input.update(is_pressed)
+
+            if is_pressed and ActionProperty.DisableAutoRelease not in properties:
+                event_helpers.ButtonReleaseActions().register_logical_button_release(
+                    input.id, event, self.data.button_inverted
+                )
+        elif input.type == InputType.JoystickHat:
+            input_value = value.current
+            input.update(input_value)
 
         # Emit an event with the LogicalDevice guid and the rest of the
         # system will then take care of executing it.
@@ -101,6 +127,42 @@ class MapToLogicalDeviceFunctor(AbstractFunctor):
                 raw_value=value.raw,
             )
         )
+
+    def relative_axis_thread(self) -> None:
+        self.thread_running = True
+        input = self._logical[
+            LogicalDevice.Input.Identifier(
+                self.data.logical_input_type, self.data.logical_input_id
+            )
+        ]
+        self.axis_value = input.value
+        while self.thread_running:
+            # If the value was changed from what we set it to in the last
+            # iteration, terminate the thread
+            change = input.value - self.axis_value
+            if abs(change) > 0.0001:
+                self.thread_running = False
+                self.should_stop_thread = True
+                return
+
+            self.axis_value = util.clamp(
+                self.axis_value + self.axis_delta_value, -1.0, 1.0
+            )
+            input.update(self.axis_value)
+            self._event_listener.joystick_event.emit(
+                event_handler.Event(
+                    event_type=input.type,
+                    identifier=input.id,
+                    device_guid=self._logical.device_guid,
+                    mode=mode_manager.ModeManager().current.name,
+                    value=self.axis_value,
+                    raw_value=self.axis_value,
+                )
+            )
+
+            if self.should_stop_thread and self.thread_last_update + 1.0 < time.time():
+                self.thread_running = False
+            time.sleep(self.THREAD_SLEEP_DURATION_S)
 
 
 class MapToLogicalDeviceModel(ActionModel):
