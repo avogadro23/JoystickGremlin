@@ -279,6 +279,15 @@ Item {
                         _root.action.updateSelectedPoint(_coordX.value, newValue)
                     }
                 }
+
+                Connections {
+                    target: _root.action
+
+                    function onSelectedPointChanged() {
+                        _coordX.value = _root.action.selectedPointCoord.x
+                        _coordY.value = _root.action.selectedPointCoord.y
+                    }
+                }
             }
         }
 
