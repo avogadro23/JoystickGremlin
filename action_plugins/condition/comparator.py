@@ -236,12 +236,12 @@ class PressedComparator(AbstractComparator):
 
         Args:
             value: button state to be compared with
-            events: events to check for validity
+            states: states to check for validity
 
         Returns:
-            True if the button has matching state, False otherwise
+            True if all buttons have matching state, False otherwise
         """
-        return states[0] == self.is_pressed
+        return all([state == self.is_pressed for state in states])
 
     def from_xml(self, node: ElementTree.Element) -> None:
         self.is_pressed = util.read_property(node, "is-pressed", PropertyType.Bool)
