@@ -372,17 +372,27 @@ class VJoyCondition(AbstractCondition):
 
     def _set_vjoy_device_id(self, vjoy_device_id: int) -> None:
         if vjoy_device_id != self._states[0].vjoy_id:
-            self._states[0].vjoy_id = vjoy_device_id
             self._create_comparator(self._states[0].input_type)
-            self._update_states(self._states)
+            self._update_states([
+                self.State(
+                    vjoy_device_id,
+                    self._states[0].input_type,
+                    self._states[0].input_id,
+                )
+            ])
 
     def _get_vjoy_input_id(self) -> int:
         return self._states[0].input_id
 
     def _set_vjoy_input_id(self, vjoy_input_id: int) -> None:
         if vjoy_input_id != self._states[0].input_id:
-            self._states[0].input_id = vjoy_input_id
-            self._update_states(self._states)
+            self._update_states([
+                self.State(
+                    self._states[0].vjoy_id,
+                    self._states[0].input_type,
+                    vjoy_input_id,
+                )
+            ])
 
     def _get_vjoy_input_type(self) -> str:
         return InputType.to_string(self._states[0].input_type)
@@ -390,9 +400,14 @@ class VJoyCondition(AbstractCondition):
     def _set_vjoy_input_type(self, input_type: str) -> None:
         input_type_tmp = InputType.to_enum(input_type)
         if input_type_tmp != self._states[0].input_type:
-            self._states[0].input_type = input_type_tmp
-            self._create_comparator(self._states[0].input_type)
-            self._update_states(self._states)
+            self._create_comparator(self._sates[0].input_type)
+            self._update_states([
+                self.State(
+                    self._states[0].vjoy_id,
+                    input_type_tmp,
+                    self._states[0].input_id,
+                )
+            ])
 
     vjoyDeviceId = QtCore.Property(
         int,
