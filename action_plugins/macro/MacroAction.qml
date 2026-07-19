@@ -390,7 +390,7 @@ Item {
                             }
                         }
 
-                        ComboBox {
+                        Compact.ComboBox {
                             model: ["Absolute", "Relative"]
 
                             Component.onCompleted: () => {
@@ -404,7 +404,7 @@ Item {
                             }
                         }
                     }
-                    ComboBox {
+                    Compact.ComboBox {
                         visible: modelData.inputType === "hat"
 
                         textRole: "text"
@@ -592,7 +592,7 @@ Item {
                             }
                         }
 
-                        ComboBox {
+                        Compact.ComboBox {
                             model: ["Absolute", "Relative"]
 
                             Component.onCompleted: () => {
@@ -606,7 +606,7 @@ Item {
                             }
                         }
                     }
-                    ComboBox {
+                    Compact.ComboBox {
                         visible: modelData.inputType === "hat"
 
                         textRole: "text"
