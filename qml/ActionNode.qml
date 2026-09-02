@@ -219,6 +219,62 @@ Item {
                     parentAction.removeAction(_root.action.sequenceIndex)
                 }
             }
+
+            JGToolButton {
+                id: _copyButton
+
+                icon: "f117"
+
+                visible: _root.action.name !== "Root"
+
+                Layout.alignment: Qt.AlignVCenter
+                Layout.leftMargin: 10
+
+                onClicked: {
+                    backend.copyActionTree(
+                        device.guid,
+                        inputItem.inputId,
+                        inputItem.inputType,
+                        mode
+                    )
+                }
+            }
+
+            JGToolButton {
+                id: _pasteButton
+
+                icon: "f121"
+
+                visible: backend.clipboardHasData()
+
+                Layout.alignment: Qt.AlignVCenter
+                Layout.leftMargin: 10
+
+                onClicked: {
+                    backend.pasteActionTree(
+                        device.guid,
+                        inputItem.inputId,
+                        inputItem.inputType,
+                        mode,
+                        backend.clipboardPosition
+                    )
+                }
+            }
+
+            JGToolButton {
+                id: _clearClipboardButton
+
+                icon: "f597"
+
+                visible: backend.clipboardHasData()
+
+                Layout.alignment: Qt.AlignVCenter
+                Layout.leftMargin: 10
+
+                onClicked: {
+                    backend.clearClipboard()
+                }
+            }
         }
 
         // +--------------------------------------------------------------------

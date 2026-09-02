@@ -606,3 +606,79 @@ class Backend(QtCore.QObject):
             # empty profile.
             self.newProfile()
             display_error(f"Failed to load the profile {fpath}.", str(e))
+
+    @QtCore.Slot(uuid.UUID, int | ScanCode)
+    def copy_action_tree(
+        self,
+        device_guid: uuid.UUID,
+        input_id: int | ScanCode,
+    ) -> None:
+        """Copies all actions from the specified input item to the clipboard.
+        
+        Args:
+            device_guid: GUID of the device
+            input_id: ID of the input item
+        """
+        input_item = self.profile.get_input_item(
+            device_guid,
+            InputType.JoystickButton,
+            input_id,
+            create_if_missing=False,
+        )
+        
+        if input_item:
+            self._clipboard = Profile.get_action_tree(input_item)
+
+    @QtCore.Slot(uuid.UUID, int | ScanCode, result=int)
+    def paste_action_tree(
+        self,
+        device_guid: uuid.UUID,
+        input_id: int | ScanCode,
+    ) -> int:
+        """Pastes actions from the clipboard to the specified input item.
+        
+        Args:
+            device_guid: GUID of the destination device
+            input_id: ID of the destination input item
+            position: Position to insert (-1 = append, 0 = prepend, or specific index)
+        """
+        if "clipboard" not in self._clipboard:
+            display_error("Clipboard is empty. Please copy an action tree first.")
+            return
+        
+        # Get or create destination input item
+        dest_input_item = self.profile.get_input_item(
+            device_guid,
+            InputType.JoystickButton,
+            input_id,
+            create_if_missing=True,
+        )
+        
+        if dest_input_item:
+            Profile.paste_action_tree(
+                self._clipboard,
+                dest_input_item,
+                position,
+            )
+
+    @QtCore.Slot()
+    def clipboard_has_data(self) -> bool:
+        """Checks if there is data in the clipboard."""
+        return "clipboard" in self._clipboard and self._clipboard["clipboard"] is not None
+
+    def __init__(self, parent: ta.OQO = None):
+        super().__init__(parent)
+        
+        self._clipboard = None
+        self._clipboard_position = -1
+
+    @QtCore.Slot(int)
+    def set_clipboard_position(self, position: int) -> None:
+        """Sets the position where to paste the clipboard content."""
+        self._clipboard_position = position
+
+    @QtCore.Property(int, notify=clipboardPositionChanged)
+    def clipboardPosition(self) -> int:
+        return self._clipboard_position
+
+    clipboardPositionChanged = QtCore.Signal()

@@ -1312,3 +1312,97 @@ class ScriptManager:
             if script.path == path and script.name == name:
                 return script
         return None
+
+    @staticmethod
+    def get_action_tree(input_item: InputItem) -> dict[uuid.UUID, AbstractActionData]:
+        """Gets all actions from an input item, including the root action and all children recursively.
+        
+        Args:
+            input_item: The input item to get actions from
+            
+        Returns:
+            Dictionary mapping action UUIDs to AbstractActionData instances
+        """
+        actions = {binding.root_action.id: binding.root_action 
+                  for binding in input_item.action_sequences}
+        return Profile._get_all_actions(actions)
+
+    @staticmethod
+    def _get_all_actions(actions: dict[uuid.UUID, AbstractActionData]) -> dict[uuid.UUID, AbstractActionData]:
+        """Recursively gets all child actions from the given actions.
+        
+        Args:
+            actions: Dictionary of actions to traverse
+            
+        Returns:
+            Dictionary containing all actions (root + children)
+        """
+        all_actions = dict(actions)
+        for action in actions.values():
+            for _, children in action.get_actions():
+                for child in children:
+                    if child.id not in all_actions:
+                        all_actions[child.id] = child
+        return all_actions
+
+    @staticmethod
+    def copy_action_tree(
+        source_input_item: InputItem, 
+        dest_input_item: InputItem
+    ) -> None:
+        """Copies all actions from a source input item to a destination input item.
+        
+        Creates clones of all actions and inserts them into the destination input item.
+        
+        Args:
+            source_input_item: The input item to copy actions from
+            dest_input_item: The input item to copy actions to
+        """
+        source_actions = Profile.get_action_tree(source_input_item)
+        
+        # Clear existing bindings in destination
+        dest_input_item.action_sequences.clear()
+        
+        # Create clones and add to destination
+        for action in source_actions.values():
+            cloned_action = action.clone()
+            dest_input_item.add_item_binding()
+            dest_input_item.action_sequences[-1].root_action = cloned_action
+
+    @staticmethod
+    def paste_action_tree(
+        source_input_item: InputItem,
+        dest_input_item: InputItem,
+        position: int = -1,
+    ) -> None:
+        """Pastes actions from a source input item to a destination input item at a specific position.
+        
+        Creates clones of all actions from the source and inserts them into the destination.
+        
+        Args:
+            source_input_item: The input item to copy actions from
+            dest_input_item: The input item to paste actions to
+            position: Position to insert the actions (-1 = append, 0 = prepend, or specific index)
+        """
+        source_actions = Profile.get_action_tree(source_input_item)
+        cloned_actions = [action.clone() for action in source_actions.values()]
+        
+        if cloned_actions:
+            # Add the first cloned action at the specified position
+            dest_input_item.add_item_binding()
+            dest_input_item.action_sequences[position].root_action = cloned_actions[0]
+            
+            # Add remaining cloned actions as children of the first
+            first_action = dest_input_item.action_sequences[-1]
+            for cloned_action in cloned_actions[1:]:
+                first_action.insert_action(cloned_action, "children", DataInsertionMode.Append)
+
+    def copy_action_tree(self, dest_input_item: "InputItem") -> None:
+        """Copies all actions from this input item to another input item.
+        
+        Creates clones of all actions and inserts them into the destination input item.
+        
+        Args:
+            dest_input_item: The destination input item to copy to
+        """
+        Profile.copy_action_tree(self, dest_input_item)
